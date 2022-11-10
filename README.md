@@ -14,7 +14,7 @@ Additionally, it hides Kubernetes boilerplate code to develop fast and efficient
 * [Bundling and installation](#bundling-and-installation)
   * [Grafana dashboard for simplified Controller Observability](#grafana-dashboard-for-simplified-controller-observability)
   * [RBAC](#rbac)
-  * [Build module operator image](#prepare--build-module-operator-image)
+  * [Build module operator image](#prepare-and-build-module-operator-image)
   * [Build and push your module to the registry](#build-and-push-your-module-to-the-registry)
 * [Using your module in the Lifecycle Manager ecosystem](#using-your-module-in-the-lifecycle-manager-ecosystem)
   * [Deploying Kyma infrastructure operators with `kyma alpha deploy`](#deploying-kyma-infrastructure-operators-with-kyma-alpha-deploy)
@@ -65,7 +65,7 @@ In case you are planning to migrate a pre-existing module within Kyma, please fa
     curl -L -o kubebuilder https://go.kubebuilder.io/dl/latest/$(go env GOOS)/$(go env GOARCH)
     chmod +x kubebuilder && mv kubebuilder /usr/local/bin/
     ```
-* [kyma CLI](https://github.com/kyma-project/cli#installation)
+* [kyma CLI](https://storage.googleapis.com/kyma-cli-stable/kyma-darwin)
 * A HELM Chart to install from your control-loop (if you do not have one ready, feel free to use the stateless redis chart from this sample)
 
 ### Generate kubebuilder operator
@@ -184,50 +184,7 @@ go get github.com/kyma-project/module-manager/operator@latest
 2. As part of the controller's `SetupWithManager()` in the Sample CR [controller implementation](controllers/sample_controller.go), we now have to tell the declarative reconciler how to reconcile the object.
    For this, we need to inject the necessary information about the declarative intention on what to reconcile with `Inject(...)`.
 
-   In its most simple form, the new setup could look like this (assuming all the settings from above were used):
-    
-   <details>
-        <summary>Sample implementation</summary>
-   
-   ```go
-    package controllers
-    import (
-	    "github.com/kyma-project/module-manager/operator/pkg/declarative"
-        metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	    "sigs.k8s.io/controller-runtime/pkg/client"
-	    ctrl "sigs.k8s.io/controller-runtime"
-	    "k8s.io/apimachinery/pkg/runtime"
-   
-	    operatorv1alpha1 "github.com/kyma-project/test-operator/operator/api/v1alpha1"
-    )
-   
-    // SampleReconciler reconciles a Sample object
-    type SampleReconciler struct {
-      declarative.ManifestReconciler
-      client.Client
-      Scheme *runtime.Scheme
-    }
-   
-    // SetupWithManager sets up the controller with the Manager.
-    func (r *SampleReconciler) SetupWithManager(mgr ctrl.Manager) error {
-    if err := r.Inject(
-      mgr, &operatorv1alpha1.Sample{},
-      declarative.WithCustomResourceLabels(map[string]string{"sampleKey": "sampleValue"}),
-      declarative.WithResourcesReady(true),
-      declarative.WithFinalizer("sample-finalizer"),
-      declarative.WithDefaultResolver(),
-    ); err != nil {
-      return err
-    }
-    
-    return ctrl.NewControllerManagedBy(mgr).
-	    For(&operatorv1alpha1.Sample{}).
-	    Complete(r)
-    }
-   ```
-   
-   </details>
-   
+   In its most simple form, the new setup could look like this (assuming all the settings from above were used).   
    Some options offered by the declarative library are applied as a manifest pre-processing step and others as post-processing.
    More details on these steps can be found in the [options documentation](https://github.com/kyma-project/module-manager/blob/main/operator/pkg/declarative/options.go) or in the reference implementation.
 
@@ -246,7 +203,7 @@ go get github.com/kyma-project/module-manager/operator@latest
 
    <details>
    
-    <summary>Sample implementation</summary>
+    <summary>Sample implementation using declarative library</summary>
    
     ```go
     package controllers
@@ -309,10 +266,11 @@ go get github.com/kyma-project/module-manager/operator@latest
     if err := r.Inject(
      mgr, &operatorv1alpha1.Sample{},
      // Note that now, we need to add it to the Injection so that it's picked up by the declarative reconciler with `declarative.WithManifestResolver(defaultResolver)`
-     declarative.WithManifestResolver(defaultResolver),
-     declarative.WithCustomResourceLabels(map[string]string{"sampleKey": "sampleValue"}),
-     declarative.WithResourcesReady(true),
-     declarative.WithFinalizer("sample-finalizer"), 
+	    declarative.WithManifestResolver(manifestResolver), 
+        declarative.WithCustomResourceLabels(map[string]string{"sampleKey": "sampleValue"}), 
+        declarative.WithPostRenderTransform(transform), 
+        declarative.WithResourcesReady(true),
+        declarative.WithFinalizer(sampleFinalizer),
     ); err != nil {
      return err
     }
@@ -442,13 +400,13 @@ _WARNING: This step requires the working OCI Registry, Cluster and Kyma CLI from
 
      ```gitignore
      # kyma module cache
-mod  mod
+       mod
      # generated dummy charts
-chartsharts
+       charts
      # kyma generated by scripts or local testing
-     kyma.yaml
+       kyma.yaml
      # template generated by kyma create module
-template.yaml.yaml
+       template.yaml
      ```
 
    Now, run the following command to create and push your module operator image to the specified registry:
