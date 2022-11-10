@@ -25,7 +25,7 @@ var _ = Describe("Sample CR scenarios", Ordered, func() {
 	DescribeTable("should set SampleCR to State `Ready`",
 		func(sampleCR *v1alpha1.Sample) {
 			// pod which needs to be checked
-			namespace := "redis"
+			namespace := "default"
 			podName := "busybox-pod"
 
 			// create SampleCR

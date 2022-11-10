@@ -60,7 +60,6 @@ const (
 	sampleFinalizer       = "sample-finalizer"
 	chartNs               = "redis"
 	nameOverride          = "custom-name-override"
-	chartPath             = "./module-chart"
 )
 
 //+kubebuilder:rbac:groups=operator.kyma-project.io,resources=samples,verbs=get;list;watch;create;update;patch;delete
@@ -73,9 +72,9 @@ const (
 //+kubebuilder:rbac:groups="*",resources="*",verbs="*"
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *SampleReconciler) SetupWithManager(mgr ctrl.Manager, rateLimiter RateLimiter) error {
+func (r *SampleReconciler) SetupWithManager(mgr ctrl.Manager, rateLimiter RateLimiter, chartPath string) error {
 	r.Config = mgr.GetConfig()
-	if err := r.initReconciler(mgr); err != nil {
+	if err := r.initReconciler(mgr, chartPath); err != nil {
 		return err
 	}
 
@@ -93,7 +92,7 @@ func (r *SampleReconciler) SetupWithManager(mgr ctrl.Manager, rateLimiter RateLi
 }
 
 // initReconciler injects the required configuration into the declarative reconciler.
-func (r *SampleReconciler) initReconciler(mgr ctrl.Manager) error {
+func (r *SampleReconciler) initReconciler(mgr ctrl.Manager, chartPath string) error {
 	manifestResolver := &ManifestResolver{chartPath: chartPath}
 	return r.Inject(mgr, &v1alpha1.Sample{},
 		declarative.WithManifestResolver(manifestResolver),

@@ -42,6 +42,7 @@ const (
 	rateLimiterFrequencyDefault = 30
 	failureBaseDelayDefault     = 1 * time.Second
 	failureMaxDelayDefault      = 1000 * time.Second
+	chartPath                   = "./module-chart"
 )
 
 var (
@@ -57,6 +58,7 @@ type FlagVar struct {
 	failureMaxDelay      time.Duration
 	rateLimiterFrequency int
 	rateLimiterBurst     int
+	chartPath            string
 }
 
 func init() { //nolint:gochecknoinits
@@ -99,7 +101,7 @@ func main() {
 	if err = (&controllers.SampleReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr, ratelimiter); err != nil {
+	}).SetupWithManager(mgr, ratelimiter, flagVar.chartPath); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Sample")
 		os.Exit(1)
 	}
@@ -136,5 +138,7 @@ func defineFlagVar() *FlagVar {
 		"Indicates the failure base delay in seconds for rate limiter.")
 	flag.DurationVar(&flagVar.failureMaxDelay, "failure-max-delay", failureMaxDelayDefault,
 		"Indicates the failure max delay in seconds")
+	flag.StringVar(&flagVar.chartPath, "module-chart-path", chartPath,
+		"Represents path containing chart to be installed")
 	return flagVar
 }

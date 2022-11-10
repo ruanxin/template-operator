@@ -20,7 +20,7 @@ Additionally, it hides Kubernetes boilerplate code to develop fast and efficient
   * [Deploying Kyma infrastructure operators with `kyma alpha deploy`](#deploying-kyma-infrastructure-operators-with-kyma-alpha-deploy)
   * [Deploying a `ModuleTemplate` into the Control Plane](#deploying-a-moduletemplate-into-the-control-plane)
   * [Debugging the operator ecosystem](#debugging-the-operator-ecosystem)
-  * [Registering your module within the cCntrol Plane](#registering-your-module-within-the-control-plane)
+  * [Registering your module within the Control Plane](#registering-your-module-within-the-control-plane)
 
 ## Understanding module development in Kyma 
 
