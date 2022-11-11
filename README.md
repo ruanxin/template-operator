@@ -412,7 +412,7 @@ _WARNING: This step requires the working OCI Registry, Cluster and Kyma CLI from
    Now, run the following command to create and push your module operator image to the specified registry:
 
    ```sh
-   kyma alpha create module kyma-project.io/module/sample 0.0.1 . -w --insecure --registry op-kcp-registry.localhost:8888/unsigned
+   kyma alpha create module --version 0.0.1 -w --insecure --registry op-kcp-registry.localhost:8888/unsigned
    ```
    
    _WARNING: For external registries (e.g. Google Container/Artifact Registry), never use insecure. Instead specify credentials. More details can be found in the help documentation of the CLI_
