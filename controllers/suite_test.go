@@ -61,7 +61,7 @@ var (
 )
 
 const (
-	chartPath                   = "./test/busybox"
+	testChartPath               = "./test/busybox"
 	rateLimiterBurstDefault     = 200
 	rateLimiterFrequencyDefault = 30
 	failureBaseDelayDefault     = 1 * time.Second
@@ -115,7 +115,7 @@ var _ = BeforeSuite(func() {
 		Scheme: scheme.Scheme,
 	}
 
-	err = reconciler.SetupWithManager(k8sManager, rateLimiter)
+	err = reconciler.SetupWithManager(k8sManager, rateLimiter, testChartPath)
 	Expect(err).ToNot(HaveOccurred())
 
 	go func() {
