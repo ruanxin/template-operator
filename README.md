@@ -164,9 +164,9 @@ go get github.com/kyma-project/module-manager/operator@latest
     package controllers
 
     import (
-	    "github.com/kyma-project/module-manager/operator/pkg/declarative"
-	    "sigs.k8s.io/controller-runtime/pkg/client"
-	    "k8s.io/apimachinery/pkg/runtime"
+        "github.com/kyma-project/module-manager/operator/pkg/declarative"
+        "sigs.k8s.io/controller-runtime/pkg/client"
+        "k8s.io/apimachinery/pkg/runtime"
     )
 
     // SampleReconciler reconciles a Sample object
@@ -184,27 +184,12 @@ go get github.com/kyma-project/module-manager/operator@latest
 2. As part of the controller's `SetupWithManager()` in the Sample CR [controller implementation](controllers/sample_controller.go), we now have to tell the declarative reconciler how to reconcile the object.
    For this, we need to inject the necessary information about the declarative intention on what to reconcile with `Inject(...)`.
 
-   In its most simple form, the new setup could look like this (assuming all the settings from above were used).   
-   Some options offered by the declarative library are applied as a manifest pre-processing step and others as post-processing.
-   More details on these steps can be found in the [options documentation](https://github.com/kyma-project/module-manager/blob/main/operator/pkg/declarative/options.go) or in the reference implementation.
+   In its most simple form, the new setup could look like this (assuming all the settings from above were used):
 
-3. A **mandatory** requirement of this reconciler is to provide the source of chart installation. This can be described using either of these options:
+    <details>
 
-   * `declarative.WithManifestResolver(manifestResolver)`: `Get()` of `types.ManifestResolver` must return an object of `types.InstallationSpec` type. Using this option you can add custom logic in `Get()` additionally. 
-   * `declarative.WithDefaultResolver()`: Sample CR's `.spec` field should implement `types.InstallationSpec` type
+    <summary><b>Sample Reconciler implementation</b> using declarative library</summary>
 
-   _WARNING: At this point in time, we will assume you have a chart that you want to install with your operator ready under `./module-chart`. If not already done, copy your charts from the [Pre-requisites](#pre-requisites)_
-
-   In both options described  above, `types.InstallationSpec` is implemented, which must contain the necessary fields for chart installation.
- 
-   E.g. Sample CR [controller implementation](controllers/sample_controller.go) returns chart information for a stateless redis installation. 
-
-   A sample implementation of  `types.ManifestResolver` installing a chart from `./module-chart` in namespace `default` with the `--set` flag `nameOverride=custom-name-override` could look like this:
-
-   <details>
-   
-    <summary>Sample implementation using declarative library</summary>
-   
     ```go
     package controllers
     import (
@@ -219,17 +204,48 @@ go get github.com/kyma-project/module-manager/operator@latest
     
        operatorv1alpha1 "github.com/kyma-project/test-operator/operator/api/v1alpha1"
     )
-    var defaultResolver = &ManifestResolver{
-       chartPath: "./module-chart",
-       configFlags: types.Flags{
-         "Namespace":       "redis", // can be omitted if namespace is pre-existing
-         "CreateNamespace": true, // can be omitted if namespace is pre-existing
-       },
-       setFlags: types.Flags{
-           "nameOverride": "custom-name-override",
-       },
+    
+    // SampleReconciler reconciles a Sample object
+    type SampleReconciler struct {
+     declarative.ManifestReconciler
+     client.Client
+     Scheme *runtime.Scheme
     }
     
+    // SetupWithManager sets up the controller with the Manager.
+    func (r *SampleReconciler) SetupWithManager(mgr ctrl.Manager) error {
+    if err := r.Inject(
+     mgr, &operatorv1alpha1.Sample{},
+     // Note that now, we need to add it to the Injection so that it's picked up by the declarative reconciler with `declarative.WithManifestResolver(defaultResolver)`
+        declarative.WithDefaultResolver(), 
+        declarative.WithCustomResourceLabels(map[string]string{"sampleKey": "sampleValue"}), 
+        declarative.WithPostRenderTransform(transform), 
+        declarative.WithResourcesReady(true),
+        declarative.WithFinalizer("sampleFinalizer"),
+    ); err != nil {
+     return err
+    }
+    
+    return ctrl.NewControllerManagedBy(mgr).
+       For(&operatorv1alpha1.Sample{}).
+       Complete(r)
+    }
+    ```
+
+   </details>
+
+   Some options offered by the declarative library are applied as a manifest pre-processing step and others as post-processing.
+   More details on these steps can be found in the [options documentation](https://github.com/kyma-project/module-manager/blob/main/operator/pkg/declarative/options.go) or in the reference implementation.
+
+3. A **mandatory** requirement of this reconciler is to provide the source of chart installation. This can be described using either of these options:
+
+   * `declarative.WithDefaultResolver()`: Sample CR's `.spec` field should implement `types.InstallationSpec` type (as shown in previous step)
+   * `declarative.WithManifestResolver(manifestResolver)`: `Get()` of `types.ManifestResolver` must return an object of `types.InstallationSpec` type. Using this option you can add custom logic in `Get()` additionally. 
+    <details>   
+
+    <summary><b>Sample Manifest Resolver implementation</b> using declarative library</summary>
+    
+   ```go
     // ManifestResolver represents the chart information for the passed Sample resource.
     type ManifestResolver struct {
        chartPath   string
@@ -253,35 +269,30 @@ go get github.com/kyma-project/module-manager/operator@latest
            },
        }, nil
     }
-    
-    // SampleReconciler reconciles a Sample object
-    type SampleReconciler struct {
-     declarative.ManifestReconciler
-     client.Client
-     Scheme *runtime.Scheme
-    }
-    
-    // SetupWithManager sets up the controller with the Manager.
-    func (r *SampleReconciler) SetupWithManager(mgr ctrl.Manager) error {
-    if err := r.Inject(
-     mgr, &operatorv1alpha1.Sample{},
-     // Note that now, we need to add it to the Injection so that it's picked up by the declarative reconciler with `declarative.WithManifestResolver(defaultResolver)`
-	    declarative.WithManifestResolver(manifestResolver), 
-        declarative.WithCustomResourceLabels(map[string]string{"sampleKey": "sampleValue"}), 
-        declarative.WithPostRenderTransform(transform), 
-        declarative.WithResourcesReady(true),
-        declarative.WithFinalizer(sampleFinalizer),
-    ); err != nil {
-     return err
-    }
-    
-    return ctrl.NewControllerManagedBy(mgr).
-       For(&operatorv1alpha1.Sample{}).
-       Complete(r)
-    }
     ```
    
    </details>
+   _WARNING: At this point in time, we will assume you have a chart that you want to install with your operator ready under `./module-chart`. If not already done, copy your charts from the [Pre-requisites](#pre-requisites)_
+
+   In both options described  above, `types.InstallationSpec` is implemented, which must contain the necessary fields for chart installation.
+ 
+   E.g. Sample CR [controller implementation](controllers/sample_controller.go) returns chart information for a stateless redis installation. 
+
+   A sample implementation of  `types.ManifestResolver` installing a chart from `./module-chart` in namespace `default` with the `--set` flag `nameOverride=custom-name-override` could look like this:
+
+var defaultResolver = &ManifestResolver{
+chartPath: "./module-chart",
+configFlags: types.Flags{
+"Namespace":       "redis", // can be omitted if namespace is pre-existing
+"CreateNamespace": true, // can be omitted if namespace is pre-existing
+},
+setFlags: types.Flags{
+"nameOverride": "custom-name-override",
+},
+}
+
+    
+
    
 4. Run `make generate manifests`, to generate boilerplate code and manifests.
 
