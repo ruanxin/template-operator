@@ -69,7 +69,7 @@ We are heavily inspired by the way that OLM handles release channels, but we do 
 Fundamentally, there is a distinct difference in parts of the `ModuleTemplate`. The ModuleTemplate contains not only a specification of the operator to be installed through OCM, but also a set of default values for a given channel when installed for the first time.
 When installing an operator from scratch through Kyma, this means that the Module will already be initialized with a default set of values.
 However, when upgrading it is not expected from the Kyma Lifecycle to update the values to eventual new defaults. Instead it is a way for module developers to prefill their Operator with instructions based on a given environment (the channel).
-It is important to note that these default values are static once they are installed, and they will not be updated unless a reinstallation of the module occurs, even when the content of `ModuleTemplate` changes. 
+It is important to note that these default values are static once they are installed, and they will not be updated unless a new installation of the module occurs, even when the content of `ModuleTemplate` changes. 
 This is because a customer is expected to be able to change the settings of the module CustomResource at any time without the Kyma ecosystem overriding it.
 Thus, the CustomResource of a Module can also be treated as a customer/runtime-facing API that allows us to offer typed configuration for multiple parts of Kyma.
 
