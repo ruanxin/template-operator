@@ -90,7 +90,7 @@ Similarly, we make the runtime module catalog discoverable from inside the runti
 
 Lastly, compared to Crossplane, we do not have as many choices when it comes to revision management and dependency resolution.
 While in Crossplane, it is possible to define custom Package, Revision and Dependency Policies. 
-However, in Kyma we opinionated here, since managed use-cases usually require unified revision handling and we do not target a generic solution for revision management of different module eco-systems.
+However, in Kyma we opinionated here, since managed use-cases usually require unified revision handling, and we do not target a generic solution for revision management of different module eco-systems.
 
 ## Implementation
 
