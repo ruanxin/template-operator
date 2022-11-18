@@ -75,7 +75,7 @@ Thus, the CustomResource of a Module can also be treated as a customer/runtime-f
 
 ### Crossplane
 
-With Crossplane, you are fundamentally allowing Providers to interact in your control-plane.
+With [Crossplane](https://crossplane.io/), you are fundamentally allowing Providers to interact in your control-plane.
 When looking at the Crossplane Lifecycle, the most similar aspect is that we also use opinionated OCI Images to bundle our Modules. 
 We use the `ModuleTemplate` to reference our layers containing the necessary metadata to deploy our controllers, just like Crossplane.
 However, we do not opinionate on Permissions of controllers and enforce stricter versioning guarantees, only allowing `semver` to be used for modules, and `Digest` for `sha` digests for individual layers of modules.
