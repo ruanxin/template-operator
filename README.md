@@ -382,7 +382,7 @@ _WARNING: This step requires the working OCI Registry, Cluster and Kyma CLI from
 1. The module operator manifests from the `default` kustomization (not the controller image) will now be bundled and pushed.
    Assuming the settings from [Prepare and build module operator image](#prepare-and-build-module-operator-image) for single-cluster mode, and assuming the following module settings:
    * hosted at `op-kcp-registry.localhost:8888/unsigned`
-   * generated for channel `stable`
+   * generated for channel `regular`
    * module has version `0.0.1`
    * module name is `template`
    * for a k3d registry enable the `insecure` flag (`http` instead of `https` for registry communication)
