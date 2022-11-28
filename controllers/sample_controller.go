@@ -30,8 +30,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/module-manager/operator/pkg/declarative"
-	"github.com/kyma-project/module-manager/operator/pkg/types"
+	"github.com/kyma-project/module-manager/pkg/declarative"
+	"github.com/kyma-project/module-manager/pkg/types"
 
 	"github.com/kyma-project/template-operator/api/v1alpha1"
 
