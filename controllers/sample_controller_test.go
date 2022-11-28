@@ -7,7 +7,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/kyma-project/module-manager/operator/pkg/types"
+	"github.com/kyma-project/module-manager/pkg/types"
 	"github.com/kyma-project/template-operator/api/v1alpha1"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -25,7 +25,7 @@ var _ = Describe("Sample CR scenarios", Ordered, func() {
 	DescribeTable("should set SampleCR to State `Ready`",
 		func(sampleCR *v1alpha1.Sample) {
 			// pod which needs to be checked
-			namespace := "default"
+			namespace := "redis"
 			podName := "busybox-pod"
 
 			// create SampleCR
