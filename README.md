@@ -42,6 +42,10 @@ Every Kyma Module using an Operator follows 5 basic Principles:
 
 Release channels let customers try new modules and features early, and decide when the updates should be applied. For more info, see the [release channels documentation in our Modularization overview](https://github.com/kyma-project/community/tree/main/concepts/modularization#release-channels).
 
+The channel name has the following rules:
+1. Lower case letters from a to z.
+2. The total length is between 3 and 32.
+
 In case you are planning to migrate a pre-existing module within Kyma, please familiarize yourself with the [transition plan for existing modules](https://github.com/kyma-project/community/blob/main/concepts/modularization/transition.md)
 
 ## Implementation
@@ -382,7 +386,7 @@ _WARNING: This step requires the working OCI Registry, Cluster and Kyma CLI from
 1. The module operator manifests from the `default` kustomization (not the controller image) will now be bundled and pushed.
    Assuming the settings from [Prepare and build module operator image](#prepare-and-build-module-operator-image) for single-cluster mode, and assuming the following module settings:
    * hosted at `op-kcp-registry.localhost:8888/unsigned`
-   * generated for channel `regular`
+   * generated for channel `regular` (or any other name follow the channel naming rules)
    * module has version `0.0.1`
    * module name is `template`
    * for a k3d registry enable the `insecure` flag (`http` instead of `https` for registry communication)
