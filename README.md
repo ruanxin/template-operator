@@ -1,5 +1,5 @@
 # Template Operator
-This documentation and template serves as a reference to implement a module (component) operator, for integration with the [lifecycle-manager](https://github.com/kyma-project/lifecycle-manager/tree/main/operator).
+This documentation and template serves as a reference to implement a module (component) operator, for integration with the [lifecycle-manager](https://github.com/kyma-project/lifecycle-manager/tree/main/).
 It utilizes the [kubebuilder](https://book.kubebuilder.io/) framework with some modifications to implement Kubernetes APIs for custom resource definitions (CRDs).
 Additionally, it hides Kubernetes boilerplate code to develop fast and efficient control loops in Go.
 
@@ -63,10 +63,12 @@ This makes it of course harder to understand compared to a strict dependency gra
   This allows multiple control-planes to offer differing modules simply at configuration time.
   Also, we do not use File-Based Catalogs for maintaining our catalog, but maintain every `ModuleTemplate` through [Open Component Model](https://ocm.software/), an open standard to describe software artifact delivery.
 
-Regarding release channels for operators, Lifecycle Manager operates fundamentally at the same level as OLM. However, with `Kyma` we ensure bundling of the `ModuleTemplate` to a specific release channel.
+Regarding release channels for operators, Lifecycle Manager operates at the same level as OLM. However, with `Kyma` we ensure bundling of the `ModuleTemplate` to a specific release channel.
 We are heavily inspired by the way that OLM handles release channels, but we do not have an intermediary `Subscription` that assigns the catalog to the channel. Instead, every module is deliverd in a `ModuleTemplate` in a channel already.
 
-Fundamentally, there is a distinct difference in parts of the `ModuleTemplate`. The ModuleTemplate contains not only a specification of the operator to be installed through OCM, but also a set of default values for a given channel when installed for the first time.
+There is a distinct difference in parts of the `ModuleTemplate`. 
+The ModuleTemplate contains not only a specification of the operator to be installed through a dedicated Layer.
+It also consists of a set of default values for a given channel when installed for the first time.
 When installing an operator from scratch through Kyma, this means that the Module will already be initialized with a default set of values.
 However, when upgrading it is not expected from the Kyma Lifecycle to update the values to eventual new defaults. Instead it is a way for module developers to prefill their Operator with instructions based on a given environment (the channel).
 It is important to note that these default values are static once they are installed, and they will not be updated unless a new installation of the module occurs, even when the content of `ModuleTemplate` changes. 
@@ -152,7 +154,7 @@ This approach will enable orchestration of Kubernetes resources so that module o
 To make use of our declarative library, simply import it with
 
 ```shell
-go get github.com/kyma-project/module-manager/operator@latest
+go get github.com/kyma-project/module-manager@latest
 ```
 
 #### Steps API definition:
@@ -163,7 +165,7 @@ go get github.com/kyma-project/module-manager/operator@latest
    ```go
     package v1alpha1
     import (
-        "github.com/kyma-project/module-manager/operator/pkg/types"
+        "github.com/kyma-project/module-manager/pkg/types"
         metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
     )
     // Sample is the Schema for the samples API
@@ -180,7 +182,7 @@ go get github.com/kyma-project/module-manager/operator@latest
    ```go
     package v1alpha1
     import (
-        "github.com/kyma-project/module-manager/operator/pkg/types"
+        "github.com/kyma-project/module-manager/pkg/types"
         metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
     )
     // Sample is the Schema for the samples API
@@ -212,7 +214,7 @@ go get github.com/kyma-project/module-manager/operator@latest
     package controllers
 
     import (
-        "github.com/kyma-project/module-manager/operator/pkg/declarative"
+        "github.com/kyma-project/module-manager/pkg/declarative"
         "sigs.k8s.io/controller-runtime/pkg/client"
         "k8s.io/apimachinery/pkg/runtime"
     )
@@ -243,8 +245,8 @@ go get github.com/kyma-project/module-manager/operator@latest
     import (
        "fmt"
        "github.com/go-logr/logr"
-       "github.com/kyma-project/module-manager/operator/pkg/declarative"
-       "github.com/kyma-project/module-manager/operator/pkg/types"
+       "github.com/kyma-project/module-manager/pkg/declarative"
+       "github.com/kyma-project/module-manager/pkg/types"
        metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
        "sigs.k8s.io/controller-runtime/pkg/client"
        ctrl "sigs.k8s.io/controller-runtime"
@@ -283,7 +285,7 @@ go get github.com/kyma-project/module-manager/operator@latest
    </details>
 
    Some options offered by the declarative library are applied as a manifest pre-processing step and others as post-processing.
-   More details on these steps can be found in the [options documentation](https://github.com/kyma-project/module-manager/blob/main/operator/pkg/declarative/options.go) or in the reference implementation.
+   More details on these steps can be found in the [options documentation](https://github.com/kyma-project/module-manager/blob/main/pkg/declarative/options.go) or in the reference implementation.
 
 3. A **mandatory** requirement of this reconciler is to provide the source of chart installation. This can be described using either of these options:
 
@@ -349,7 +351,7 @@ setFlags: types.Flags{
 A custom resource is required to contain a specific set of properties in the Status object, to be tracked by the [lifecycle-manager](https://github.com/kyma-project/lifecycle-manager/tree/main).
 This is required to track the current state of the module, represented by this custom resource.
 
-1. Check the reference implementation of [Status](https://github.com/kyma-project/module-manager/blob/main/operator/pkg/types/declaritive.go) reference implementation. The `.status.state` field of your custom resource _MUST_ contain one of these state values at all times.
+1. Check the reference implementation of [Status](https://github.com/kyma-project/module-manager/blob/main/pkg/types/declaritive.go) reference implementation. The `.status.state` field of your custom resource _MUST_ contain one of these state values at all times.
    On top, `.status` object could contain other relevant properties as per your requirements.
 2. The `.status.state` values have literal meaning behind them, so use them appropriately.
 
@@ -430,7 +432,7 @@ _WARNING: This step requires the working OCI Registry, Cluster and Kyma CLI from
 1. The module operator manifests from the `default` kustomization (not the controller image) will now be bundled and pushed.
    Assuming the settings from [Prepare and build module operator image](#prepare-and-build-module-operator-image) for single-cluster mode, and assuming the following module settings:
    * hosted at `op-kcp-registry.localhost:8888/unsigned`
-   * generated for channel `stable`
+   * generated for channel `regular`
    * module has version `0.0.1`
    * module name is `template`
    * for a k3d registry enable the `insecure` flag (`http` instead of `https` for registry communication)
@@ -535,7 +537,7 @@ _WARNING: This step requires the working OCI Registry and Cluster from our [Pre-
 
 Now that everything is prepared in a cluster of your choice, you are free to reference the module within any `Kyma` custom resource in your Control Plane cluster.
 
-Deploy the [Lifecycle Manager](https://github.com/kyma-project/lifecycle-manager/tree/main) & [Module Manager](https://github.com/kyma-project/module-manager/tree/main/operator) to the Control Plane cluster with:
+Deploy the [Lifecycle Manager](https://github.com/kyma-project/lifecycle-manager/tree/main) & [Module Manager](https://github.com/kyma-project/module-manager/tree/main) to the Control Plane cluster with:
 
 ```shell
 kyma alpha deploy
