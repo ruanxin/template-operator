@@ -38,8 +38,9 @@ spec:
             type: object
           spec:
             properties:
-              releaseName:
-                description: 'TODO: Implement spec properties here'
+              resourceFilePath:
+                description: ResourceFilePath indicates the local dir path containing
+                  a .yaml or .yaml, with all required resources to be processed
                 type: string
             type: object
           status:

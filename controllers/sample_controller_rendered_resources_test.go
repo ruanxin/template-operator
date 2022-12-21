@@ -81,7 +81,7 @@ func createSampleCR(sampleName string) *v1alpha1.Sample {
 			Name:      sampleName,
 			Namespace: metav1.NamespaceDefault,
 		},
-		Spec: v1alpha1.SampleSpec{ReleaseName: "redis-release"},
+		Spec: v1alpha1.SampleSpec{ResourceFilePath: "./test/busybox/manifest"},
 	}
 }
 

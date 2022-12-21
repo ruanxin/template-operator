@@ -102,8 +102,9 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 
 	reconciler = &controllers.SampleReconciler{
-		Client: k8sManager.GetClient(),
-		Scheme: scheme.Scheme,
+		Client:        k8sManager.GetClient(),
+		Scheme:        scheme.Scheme,
+		EventRecorder: k8sManager.GetEventRecorderFor("tests"),
 	}
 
 	err = reconciler.SetupWithManager(k8sManager, rateLimiter, testChartPath)

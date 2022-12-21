@@ -43,6 +43,7 @@ const (
 	failureBaseDelayDefault     = 1 * time.Second
 	failureMaxDelayDefault      = 1000 * time.Second
 	chartPath                   = "./module-chart"
+	operatorName                = "template-operator"
 )
 
 var (
@@ -99,8 +100,9 @@ func main() {
 	}
 
 	if err = (&controllers.SampleReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		EventRecorder: mgr.GetEventRecorderFor(operatorName),
 	}).SetupWithManager(mgr, ratelimiter, flagVar.chartPath); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Sample")
 		os.Exit(1)

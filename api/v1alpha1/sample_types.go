@@ -57,8 +57,9 @@ func (s *Sample) ComponentName() string {
 }
 
 type SampleSpec struct {
-	// TODO: Implement spec properties here
-	ReleaseName string `json:"releaseName,omitempty"`
+	// ResourceFilePath indicates the local dir path containing a .yaml or .yaml,
+	// with all required resources to be processed
+	ResourceFilePath string `json:"resourceFilePath,omitempty"`
 }
 
 // +kubebuilder:object:root=true
