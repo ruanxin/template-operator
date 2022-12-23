@@ -51,7 +51,7 @@ func (s *SampleStatus) WithState(state State) SampleStatus {
 }
 
 type SampleSpec struct {
-	// ResourceFilePath indicates the local dir path containing a .yaml or .yaml,
+	// ResourceFilePath indicates the local dir path containing a .yaml or .yml,
 	// with all required resources to be processed
 	ResourceFilePath string `json:"resourceFilePath,omitempty"`
 }

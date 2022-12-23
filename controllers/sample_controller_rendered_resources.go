@@ -200,7 +200,9 @@ func (r *SampleReconciler) HandleProcessingState(ctx context.Context, objectInst
 
 	resourceObjs, err := getResourcesFromLocalPath(objectInstance.Spec.ResourceFilePath, logger)
 	if err != nil {
-		return err
+		logger.Error(err, "error locating manifest of resources")
+		r.Event(objectInstance, "Warning", "ResourcesInstall", "locating resources error")
+		return r.setStatusForObjectInstance(ctx, objectInstance, status.WithState(v1alpha1.StateError))
 	}
 
 	// the resources to be installed are unstructured,
@@ -229,6 +231,9 @@ func (r *SampleReconciler) HandleDeletingState(ctx context.Context, objectInstan
 	status := getStatusFromObjectInstance(objectInstance)
 
 	resourceObjs, err := getResourcesFromLocalPath(objectInstance.Spec.ResourceFilePath, logger)
+	if err != nil {
+		return err
+	}
 	r.Event(objectInstance, "Normal", "ResourcesDelete", "deleting resources")
 
 	// the resources to be installed are unstructured,
