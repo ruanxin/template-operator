@@ -7,7 +7,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/kyma-project/module-manager/pkg/types"
 	"github.com/kyma-project/template-operator/api/v1alpha1"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -42,7 +41,7 @@ var _ = Describe("Sample CR scenarios", Ordered, func() {
 			Eventually(sampleCRState(crObjectKey)).
 				WithTimeout(30 * time.Second).
 				WithPolling(500 * time.Millisecond).
-				Should(Equal(CRState{State: types.StateReady, Err: nil}))
+				Should(Equal(CRState{State: v1alpha1.StateReady, Err: nil}))
 
 			// clean up SampleCR
 			Expect(k8sClient.Delete(ctx, sampleCR)).To(Succeed())
@@ -109,7 +108,7 @@ func getPod(namespace, podName string) func(g Gomega) bool {
 }
 
 type CRState struct {
-	State types.State
+	State v1alpha1.State
 	Err   error
 }
 
@@ -118,7 +117,7 @@ func sampleCRState(sampleObjKey client.ObjectKey) func(g Gomega) CRState {
 		sampleCR := &v1alpha1.Sample{}
 		err := k8sClient.Get(ctx, sampleObjKey, sampleCR)
 		if err != nil {
-			return CRState{State: types.StateError, Err: err}
+			return CRState{State: v1alpha1.StateError, Err: err}
 		}
 		g.Expect(err).NotTo(HaveOccurred())
 		return CRState{State: sampleCR.Status.State, Err: nil}

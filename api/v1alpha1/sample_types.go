@@ -18,8 +18,6 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/kyma-project/module-manager/pkg/types"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -38,22 +36,18 @@ type Sample struct {
 }
 
 type SampleStatus struct {
-	types.Status `json:",inline"`
+	Status `json:",inline"`
+
+	// Conditions contain a set of conditionals to determine the State of Status.
+	// If all Conditions are met, State is expected to be in StateReady.
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
 	// add other fields to status subresource here
 }
 
-var _ types.CustomObject = &Sample{}
-
-func (s *Sample) GetStatus() types.Status {
-	return s.Status.Status
-}
-
-func (s *Sample) SetStatus(status types.Status) {
-	s.Status.Status = status
-}
-
-func (s *Sample) ComponentName() string {
-	return "sample-component-name"
+func (s *SampleStatus) WithState(state State) SampleStatus {
+	s.State = state
+	return *s
 }
 
 type SampleSpec struct {

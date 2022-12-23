@@ -47,7 +47,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/kyma-project/module-manager/pkg/types"
 	"github.com/kyma-project/template-operator/api/v1alpha1"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -80,6 +79,11 @@ type RateLimiter struct {
 	Frequency       int
 	BaseDelay       time.Duration
 	FailureMaxDelay time.Duration
+}
+
+type ManifestResources struct {
+	Items []*unstructured.Unstructured
+	Blobs [][]byte
 }
 
 //+kubebuilder:rbac:groups=operator.kyma-project.io,resources=samples,verbs=get;list;watch;create;update;patch;delete
@@ -125,13 +129,7 @@ func (r *SampleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	sampleObj := v1alpha1.Sample{}
 
-	// verify resource interface compliance
-	objectInstance, ok := sampleObj.DeepCopyObject().(types.CustomObject)
-	if !ok {
-		return ctrl.Result{}, getTypeError(req.String())
-	}
-
-	if err := r.Client.Get(ctx, req.NamespacedName, objectInstance); err != nil {
+	if err := r.Client.Get(ctx, req.NamespacedName, &sampleObj); err != nil {
 		// we'll ignore not-found errors, since they can't be fixed by an immediate
 		// requeue (we'll need to wait for a new notification), and we can get them
 		// on deleted requests.
@@ -139,40 +137,43 @@ func (r *SampleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	// verify resource interface compliance
+	objectInstance := *sampleObj.DeepCopy()
+
 	// check if deletionTimestamp is set, retry until it gets deleted
-	status := getStatusFromObjectInstance(objectInstance)
+	status := getStatusFromObjectInstance(&objectInstance)
 
 	// set state to Deleting if not set for an object with deletion timestamp
 	if !objectInstance.GetDeletionTimestamp().IsZero() &&
-		status.State != types.StateDeleting {
+		status.State != v1alpha1.StateDeleting {
 		// if the status is not yet set to deleting, also update the status
-		return ctrl.Result{}, r.setStatusForObjectInstance(ctx, objectInstance, status.WithState(types.StateDeleting))
+		return ctrl.Result{}, r.setStatusForObjectInstance(ctx, &objectInstance, status.WithState(v1alpha1.StateDeleting))
 	}
 
 	// add finalizer if not present
-	if controllerutil.AddFinalizer(objectInstance, finalizer) {
+	if controllerutil.AddFinalizer(&objectInstance, finalizer) {
 		objectInstance.SetManagedFields(nil)
-		return ctrl.Result{}, r.ssa(ctx, objectInstance)
+		return ctrl.Result{}, r.ssa(ctx, &objectInstance)
 	}
 
 	switch status.State {
 	case "":
-		return ctrl.Result{}, r.HandleInitialState(ctx, objectInstance)
-	case types.StateProcessing:
-		return ctrl.Result{Requeue: true}, r.HandleProcessingState(ctx, objectInstance)
-	case types.StateDeleting:
-		return ctrl.Result{Requeue: true}, r.HandleDeletingState(ctx, objectInstance)
-	case types.StateError:
-		return ctrl.Result{Requeue: true}, r.HandleProcessingState(ctx, objectInstance)
-	case types.StateReady:
-		return ctrl.Result{RequeueAfter: requeueInterval}, r.HandleReadyState(ctx, objectInstance)
+		return ctrl.Result{}, r.HandleInitialState(ctx, &objectInstance)
+	case v1alpha1.StateProcessing:
+		return ctrl.Result{Requeue: true}, r.HandleProcessingState(ctx, &objectInstance)
+	case v1alpha1.StateDeleting:
+		return ctrl.Result{Requeue: true}, r.HandleDeletingState(ctx, &objectInstance)
+	case v1alpha1.StateError:
+		return ctrl.Result{Requeue: true}, r.HandleProcessingState(ctx, &objectInstance)
+	case v1alpha1.StateReady:
+		return ctrl.Result{RequeueAfter: requeueInterval}, r.HandleReadyState(ctx, &objectInstance)
 	}
 
 	return ctrl.Result{}, nil
 }
 
 // HandleInitialState bootstraps state handling for the reconciled resource.
-func (r *SampleReconciler) HandleInitialState(ctx context.Context, objectInstance types.CustomObject) error {
+func (r *SampleReconciler) HandleInitialState(ctx context.Context, objectInstance *v1alpha1.Sample) error {
 	status := getStatusFromObjectInstance(objectInstance)
 
 	installationCondition := metav1.Condition{
@@ -186,23 +187,18 @@ func (r *SampleReconciler) HandleInitialState(ctx context.Context, objectInstanc
 	status.Conditions = make([]metav1.Condition, 0, 1)
 	meta.SetStatusCondition(&status.Conditions, installationCondition)
 
-	return r.setStatusForObjectInstance(ctx, objectInstance, status.WithState(types.StateProcessing))
+	return r.setStatusForObjectInstance(ctx, objectInstance, status.WithState(v1alpha1.StateProcessing))
 }
 
 // HandleProcessingState processes the reconciled resource by processing the underlying resources.
 // Based on the processing either a success or failure state is set on the reconciled resource.
-func (r *SampleReconciler) HandleProcessingState(ctx context.Context, objectInstance types.CustomObject) error {
+func (r *SampleReconciler) HandleProcessingState(ctx context.Context, objectInstance *v1alpha1.Sample) error {
 	r.Event(objectInstance, "Warning", "Processing", "resource processing")
 	logger := log.FromContext(ctx)
-	sampleObject, ok := objectInstance.(*v1alpha1.Sample)
-	if !ok {
-		return fmt.Errorf("type interface compliance of passed resource failed for %s",
-			client.ObjectKeyFromObject(objectInstance).String())
-	}
 
 	status := getStatusFromObjectInstance(objectInstance)
 
-	resourceObjs, err := getResourcesFromLocalPath(sampleObject.Spec.ResourceFilePath, logger)
+	resourceObjs, err := getResourcesFromLocalPath(objectInstance.Spec.ResourceFilePath, logger)
 	if err != nil {
 		return err
 	}
@@ -214,30 +210,25 @@ func (r *SampleReconciler) HandleProcessingState(ctx context.Context, objectInst
 		if err = r.ssa(ctx, obj); err != nil && !errors2.IsAlreadyExists(err) {
 			logger.Error(err, "error during installation of resources")
 			r.Event(objectInstance, "Warning", "ResourcesInstall", "installing resources error")
-			return r.setStatusForObjectInstance(ctx, objectInstance, status.WithState(types.StateError))
+			return r.setStatusForObjectInstance(ctx, objectInstance, status.WithState(v1alpha1.StateError))
 		}
 	}
 
 	status.Conditions[0].Status = metav1.ConditionTrue
 	status.Conditions[0].ObservedGeneration = objectInstance.GetGeneration()
 	meta.SetStatusCondition(&status.Conditions, status.Conditions[0])
-	return r.setStatusForObjectInstance(ctx, objectInstance, status.WithState(types.StateReady))
+	return r.setStatusForObjectInstance(ctx, objectInstance, status.WithState(v1alpha1.StateReady))
 }
 
 // HandleDeletingState processed the deletion on the reconciled resource.
 // Once the deletion if processed the relevant finalizers (if applied) are removed.
-func (r *SampleReconciler) HandleDeletingState(ctx context.Context, objectInstance types.CustomObject) error {
+func (r *SampleReconciler) HandleDeletingState(ctx context.Context, objectInstance *v1alpha1.Sample) error {
 	r.Event(objectInstance, "Warning", "Deleting", "resource deleting")
 	logger := log.FromContext(ctx)
-	sampleObject, ok := objectInstance.(*v1alpha1.Sample)
-	if !ok {
-		return fmt.Errorf("type conversion of passed resource failed for %s",
-			client.ObjectKeyFromObject(objectInstance).String())
-	}
 
 	status := getStatusFromObjectInstance(objectInstance)
 
-	resourceObjs, err := getResourcesFromLocalPath(sampleObject.Spec.ResourceFilePath, logger)
+	resourceObjs, err := getResourcesFromLocalPath(objectInstance.Spec.ResourceFilePath, logger)
 	r.Event(objectInstance, "Normal", "ResourcesDelete", "deleting resources")
 
 	// the resources to be installed are unstructured,
@@ -246,7 +237,7 @@ func (r *SampleReconciler) HandleDeletingState(ctx context.Context, objectInstan
 		if err = r.Client.Delete(ctx, obj); err != nil && !errors2.IsNotFound(err) {
 			logger.Error(err, "error during installation of resources")
 			r.Event(objectInstance, "Warning", "ResourcesDelete", "deleting resources error")
-			return r.setStatusForObjectInstance(ctx, objectInstance, status.WithState(types.StateError))
+			return r.setStatusForObjectInstance(ctx, objectInstance, status.WithState(v1alpha1.StateError))
 		}
 	}
 
@@ -258,17 +249,17 @@ func (r *SampleReconciler) HandleDeletingState(ctx context.Context, objectInstan
 }
 
 // HandleReadyState checks for the consistency of reconciled resource, by verifying the underlying resources.
-func (r *SampleReconciler) HandleReadyState(ctx context.Context, objectInstance types.CustomObject) error {
+func (r *SampleReconciler) HandleReadyState(ctx context.Context, objectInstance *v1alpha1.Sample) error {
 	// TODO: handle custom ready state handling here
 	// by default we will call HandleProcessingState to verify if all resources were installed correctly
 	// by patching them again
 	return r.HandleProcessingState(ctx, objectInstance)
 }
 
-func (r *SampleReconciler) setStatusForObjectInstance(ctx context.Context, objectInstance types.CustomObject,
-	status types.Status,
+func (r *SampleReconciler) setStatusForObjectInstance(ctx context.Context, objectInstance *v1alpha1.Sample,
+	status v1alpha1.SampleStatus,
 ) error {
-	objectInstance.SetStatus(status)
+	objectInstance.Status = status
 
 	if err := r.ssaStatus(ctx, objectInstance); err != nil {
 		r.Event(objectInstance, "Warning", "ErrorUpdatingStatus", fmt.Sprintf("updating state to %v", string(status.State)))
@@ -279,17 +270,13 @@ func (r *SampleReconciler) setStatusForObjectInstance(ctx context.Context, objec
 	return nil
 }
 
-func getTypeError(namespacedName string) error {
-	return fmt.Errorf("invalid custom resource object type for reconciliation %s", namespacedName)
-}
-
-func getStatusFromObjectInstance(objectInstance types.CustomObject) types.Status {
-	return objectInstance.GetStatus()
+func getStatusFromObjectInstance(objectInstance *v1alpha1.Sample) v1alpha1.SampleStatus {
+	return objectInstance.Status
 }
 
 // getResourcesFromLocalPath returns resources from the dirPath in unstructured format.
 // Only one file in .yaml or .yml format should be present in the target directory.
-func getResourcesFromLocalPath(dirPath string, logger logr.Logger) (*types.ManifestResources, error) {
+func getResourcesFromLocalPath(dirPath string, logger logr.Logger) (*ManifestResources, error) {
 	dirEntries := make([]fs.DirEntry, 0)
 	err := filepath.WalkDir(dirPath, func(path string, info fs.DirEntry, err error) error {
 		// initial error
@@ -328,8 +315,8 @@ func getResourcesFromLocalPath(dirPath string, logger logr.Logger) (*types.Manif
 }
 
 // parseManifestStringToObjects parses the string of resources into a list of unstructured resources.
-func parseManifestStringToObjects(manifest string) (*types.ManifestResources, error) {
-	objects := &types.ManifestResources{}
+func parseManifestStringToObjects(manifest string) (*ManifestResources, error) {
+	objects := &ManifestResources{}
 	reader := yamlUtil.NewYAMLReader(bufio.NewReader(strings.NewReader(manifest)))
 	for {
 		rawBytes, err := reader.Read()
