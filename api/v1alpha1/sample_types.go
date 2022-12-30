@@ -17,7 +17,13 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+var (
+	ConditionTypeInstallation = "Installation"
+	ConditionReasonReady      = "Ready"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -45,9 +51,30 @@ type SampleStatus struct {
 	// add other fields to status subresource here
 }
 
-func (s *SampleStatus) WithState(state State) SampleStatus {
+func (s *SampleStatus) WithState(state State) *SampleStatus {
 	s.State = state
-	return *s
+	return s
+}
+
+func (s *SampleStatus) WithInstallConditionStatus(status metav1.ConditionStatus, objGeneration int64) *SampleStatus {
+	if s.Conditions == nil {
+		s.Conditions = make([]metav1.Condition, 0, 1)
+	}
+
+	condition := meta.FindStatusCondition(s.Conditions, ConditionTypeInstallation)
+
+	if condition == nil {
+		condition = &metav1.Condition{
+			Type:    ConditionTypeInstallation,
+			Reason:  ConditionReasonReady,
+			Message: "installation is ready and resources can be used",
+		}
+	}
+
+	condition.Status = status
+	condition.ObservedGeneration = objGeneration
+	meta.SetStatusCondition(&s.Conditions, *condition)
+	return s
 }
 
 type SampleSpec struct {

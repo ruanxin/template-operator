@@ -3,8 +3,8 @@ module github.com/kyma-project/template-operator
 go 1.19
 
 require (
-	github.com/ghodss/yaml v1.0.0
 	github.com/go-logr/logr v1.2.3
+	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/onsi/ginkgo/v2 v2.5.0
 	github.com/onsi/gomega v1.24.1
 	golang.org/x/time v0.0.0-20220722155302-e5dcc9cfc0b9
