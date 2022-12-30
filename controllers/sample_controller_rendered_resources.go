@@ -355,7 +355,9 @@ func parseManifestStringToObjects(manifest string) (*ManifestResources, error) {
 // ssaStatus patches status using SSA on the passed object
 func (r *SampleReconciler) ssaStatus(ctx context.Context, obj client.Object) error {
 	obj.SetManagedFields(nil)
-	return r.Status().Patch(ctx, obj, client.Apply, client.FieldOwner(fieldOwner))
+	obj.SetResourceVersion("")
+	return r.Status().Patch(ctx, obj, client.Apply,
+		&client.SubResourcePatchOptions{PatchOptions: client.PatchOptions{FieldManager: fieldOwner}})
 }
 
 // ssaStatus patches the object using SSA
