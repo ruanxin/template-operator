@@ -8,8 +8,6 @@ Additionally, it hides Kubernetes boilerplate code to develop fast and efficient
 * [Implementation](#implementation)
   * [Pre-requisites](#pre-requisites)
   * [Generate kubebuilder operator](#generate-kubebuilder-operator)
-  * [Default (declarative) reconciliation and status handling](#default-declarative-reconciliation-and-status-handling)
-  * [Custom reconciliation and status handling guidelines](#custom-reconciliation-and-status-handling-guidelines)
   * [Local testing](#local-testing)
 * [Bundling and installation](#bundling-and-installation)
   * [Grafana dashboard for simplified Controller Observability](#grafana-dashboard-for-simplified-controller-observability)
@@ -120,7 +118,7 @@ However, in Kyma we opinionated here, since managed use-cases usually require un
     chmod +x kubebuilder && mv kubebuilder /usr/local/bin/
     ```
 * [kyma CLI](https://storage.googleapis.com/kyma-cli-stable/kyma-darwin)
-* A HELM Chart to install from your control-loop (if you do not have one ready, feel free to use the stateless redis chart from this sample)
+* A [Helm Chart](https://helm.sh/) to install from your control-loop (if you do not have one ready, feel free to use the stateless redis chart from this sample)
 
 ### Generate kubebuilder operator
 
@@ -146,221 +144,72 @@ If the module operator will be deployed under same namespace with other operator
 2. Include all resources (e.g: [manager.yaml](config/manager/manager.yaml)) which contain label selectors by using `commonLabels`.
 
 Further reading: [Kustomize built-in commonLabels](https://github.com/kubernetes-sigs/kustomize/blob/master/api/konfig/builtinpluginconsts/commonlabels.go)
-   
-### Default (declarative) Reconciliation and Status handling
 
-_Warning: This declarative approach to reconciliation is inherited from the [kubebuilder declarative pattern](https://github.com/kubernetes-sigs/kubebuilder-declarative-pattern).
-It eases the controller implementation effort of developers, covering simple use cases based on best practices . For more complex scenarios, **DO NOT USE** our declarative pattern but build your own reconciliation loop instead.__
+#### Steps API definition
 
-For simple use cases where an operator should install one or many helm chart(s) and set the state of the corresponding Custom Resource accordingly, a declarative approach is useful for abstracting (sometimes heavy) boilerplate.
-This approach will enable orchestration of Kubernetes resources so that module owners can concentrate on their specific logic.
+1. Refer to [State requirements](api/v1alpha1/status.go) and include them in your `Status` sub-resource similarly.
 
-To make use of our declarative library, simply import it with
-
-```shell
-go get github.com/kyma-project/module-manager@latest
-```
-
-#### Steps API definition:
-
-1. Refer to [API definition](api/v1alpha1/sample_types.go) of `SampleCR` and implement `Status` sub-resource similarly in `./api/<your_api_version>/<cr_name>_types.go`.
-   This `Status` type definition is sourced from the `module-manager` declarative library and contains all valid `.status.state` values as discussed in the previous sections.
-   You can embed it into your existing status object:
-   ```go
+   This `Status` sub-resource should contain all valid `State` values (`.status.state`) values in order to be compliant with the Kyma ecosystem.
+    ```go
     package v1alpha1
-    import (
-        "github.com/kyma-project/module-manager/pkg/types"
-        metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-    )
+    // Status defines the observed state of Module CR.
+    type Status struct {
+        // State signifies current state of Module CR.
+        // Value can be one of ("Ready", "Processing", "Error", "Deleting").
+        // +kubebuilder:validation:Required
+        // +kubebuilder:validation:Enum=Processing;Deleting;Ready;Error
+        State State `json:"state"`
+    }
+    ```
+
+    Include the `State` values in your `Status` sub-resource, either through inline reference or direct inclusion. These values have literal meaning behind them, so use them appropriately.
+
+2. Optionally, you can add additional fields to your `Status` sub-resource. 
+For instance, `Conditions` are added to `SampleCR` in the [API definition](api/v1alpha1/sample_types.go), along with the required `State` values using inline reference.
+
+    <details>
+    <summary><b>Reference implementation</b></summary>
+    
+    ```go
+    package v1alpha1
     // Sample is the Schema for the samples API
     type Sample struct {
         metav1.TypeMeta   `json:",inline"`
         metav1.ObjectMeta `json:"metadata,omitempty"`
     
         Spec   SampleSpec   `json:"spec,omitempty"`
-        Status types.Status `json:"status,omitempty"`
+        Status SampleStatus `json:"status,omitempty"`
     }
-   ```
+    
+    type SampleStatus struct {
+        Status `json:",inline"`
+    
+        // Conditions contain a set of conditionals to determine the State of Status.
+        // If all Conditions are met, State is expected to be in StateReady.
+        Conditions []metav1.Condition `json:"conditions,omitempty"`
+    
+        // add other fields to status subresource here
+    }
+    ```
+    </details>
 
-2. Ensure the module CR's API definition implements the `module-manager` declarative library's resource `.status` interface requirements, represented by `types.CustomObject`. Also implement missing interface methods.
-   ```go
-    package v1alpha1
-    import (
-        "github.com/kyma-project/module-manager/pkg/types"
-        metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-    )
-    // Sample is the Schema for the samples API
-    type Sample struct {
-        metav1.TypeMeta   `json:",inline"`
-        metav1.ObjectMeta `json:"metadata,omitempty"`
-    
-        Spec   SampleSpec   `json:"spec,omitempty"`
-        Status types.Status `json:"status,omitempty"`
-    }
-    func (in *Sample) GetStatus() types.Status {
-        return in.Status
-    }
-    
-    func (in *Sample) SetStatus(status types.Status) {
-        in.Status = status
-    }
-    
-    func (in *Sample) ComponentName() string {
-        return "sample-component-name"
-    }
-   ```
+4. Run `make generate manifests`, to generate boilerplate code and manifests.
 
 #### Steps controller implementation
 
-1. Refer to the [controller implementation](controllers/sample_controller.go).
-   Instead of implementing the default reconciler interface, as provided by `kubebuilder`, include the `module-manager` declarative reconciler in `./controllers/<cr_name>_controller.go`.
-    ```go
-    package controllers
+_Warning_: This sample implementation is only for reference. You could copy parts of implementation but please do not add this repository as a dependency to your project.
 
-    import (
-        "github.com/kyma-project/module-manager/pkg/declarative"
-        "sigs.k8s.io/controller-runtime/pkg/client"
-        "k8s.io/apimachinery/pkg/runtime"
-    )
+1. Implement `State` handling to represent the corresponding state of the reconciled resource, by following [kubebuilder](https://book.kubebuilder.io/) guidelines to implement controllers.
 
-    // SampleReconciler reconciles a Sample object
-    type SampleReconciler struct {
-        declarative.ManifestReconciler // this handles declarative manifest reconciliation
-        client.Client
-        Scheme *runtime.Scheme
-    }
-    ```
-   _WARNING: Notice there is no `Reconcile()` method implemented in our referenced controller, since the logic is abstracted within the declarative reconciler.
-   If you add `declarative.ManifestReconciler` into a plain controller, the declarative `Reconcile` method would be overwritten, so make sure to delete the old method in case you want to use the default logic._
-   
-   Now, you will still be left with some steps to make our reconciler run with our declarative setup.
-
-2. As part of the controller's `SetupWithManager()` in the Sample CR [controller implementation](controllers/sample_controller.go), we now have to tell the declarative reconciler how to reconcile the object.
-   For this, we need to inject the necessary information about the declarative intention on what to reconcile with `Inject(...)`.
-
-   In its most simple form, the new setup could look like this (assuming all the settings from above were used):
-
-    <details>
-
-    <summary><b>Sample Reconciler implementation</b> using declarative library</summary>
-
-    ```go
-    package controllers
-    import (
-       "fmt"
-       "github.com/go-logr/logr"
-       "github.com/kyma-project/module-manager/pkg/declarative"
-       "github.com/kyma-project/module-manager/pkg/types"
-       metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-       "sigs.k8s.io/controller-runtime/pkg/client"
-       ctrl "sigs.k8s.io/controller-runtime"
-       "k8s.io/apimachinery/pkg/runtime"
+2. Optionally, you could refer to the `SampleCR` [controller implementation](controllers/sample_controller_rendered_resources_test.go) for setting appropriate `State` and `Conditions` values to your `Status` sub-resource, such as:
+    ````go   
+    r.setStatusForObjectInstance(ctx, objectInstance, status.
+    WithState(v1alpha1.StateReady).
+    WithInstallConditionStatus(metav1.ConditionTrue, objectInstance.GetGeneration()))
+    ````
     
-       operatorv1alpha1 "github.com/kyma-project/test-operator/operator/api/v1alpha1"
-    )
-    
-    // SampleReconciler reconciles a Sample object
-    type SampleReconciler struct {
-     declarative.ManifestReconciler
-     client.Client
-     Scheme *runtime.Scheme
-    }
-    
-    // SetupWithManager sets up the controller with the Manager.
-    func (r *SampleReconciler) SetupWithManager(mgr ctrl.Manager) error {
-    if err := r.Inject(
-     mgr, &operatorv1alpha1.Sample{},
-     // Note that now, we need to add it to the Injection so that it's picked up by the declarative reconciler with `declarative.WithManifestResolver(defaultResolver)`
-        declarative.WithDefaultResolver(), 
-        declarative.WithCustomResourceLabels(map[string]string{"sampleKey": "sampleValue"}), 
-        declarative.WithPostRenderTransform(transform), 
-        declarative.WithResourcesReady(true),
-        declarative.WithFinalizer("sampleFinalizer"),
-    ); err != nil {
-     return err
-    }
-    
-    return ctrl.NewControllerManagedBy(mgr).
-       For(&operatorv1alpha1.Sample{}).
-       Complete(r)
-    }
-    ```
-
-   </details>
-
-   Some options offered by the declarative library are applied as a manifest pre-processing step and others as post-processing.
-   More details on these steps can be found in the [options documentation](https://github.com/kyma-project/module-manager/blob/main/pkg/declarative/options.go) or in the reference implementation.
-
-3. A **mandatory** requirement of this reconciler is to provide the source of chart installation. This can be described using either of these options:
-
-   * `declarative.WithDefaultResolver()`: Sample CR's `.spec` field should implement `types.InstallationSpec` type (as shown in previous step)
-   * `declarative.WithManifestResolver(manifestResolver)`: `Get()` of `types.ManifestResolver` must return an object of `types.InstallationSpec` type. Using this option you can add custom logic in `Get()` additionally. 
-    <details>   
-
-    <summary><b>Sample Manifest Resolver implementation</b> using declarative library</summary>
-    
-   ```go
-    // ManifestResolver represents the chart information for the passed Sample resource.
-    type ManifestResolver struct {
-       chartPath   string
-       setFlags    types.Flags
-       configFlags types.Flags
-    }
-    
-    // Get returns the chart information to be processed.
-    func (m *ManifestResolver) Get(obj types.BaseCustomObject, _ logr.Logger) (types.InstallationSpec, error) {
-       sample, valid := obj.(*operatorv1alpha1.Sample)
-       if !valid {
-           return types.InstallationSpec{},
-               fmt.Errorf("invalid type conversion for %s", client.ObjectKeyFromObject(obj))
-       }
-       return types.InstallationSpec{
-           ChartPath:   m.chartPath,
-           ReleaseName: sample.Spec.Foo,
-           ChartFlags: types.ChartFlags{
-               ConfigFlags: m.configFlags,
-               SetFlags:    m.setFlags,
-           },
-       }, nil
-    }
-    ```
-   
-   </details>
-   _WARNING: At this point in time, we will assume you have a chart that you want to install with your operator ready under `./module-chart`. If not already done, copy your charts from the [Pre-requisites](#pre-requisites)_
-
-   In both options described  above, `types.InstallationSpec` is implemented, which must contain the necessary fields for chart installation.
- 
-   E.g. Sample CR [controller implementation](controllers/sample_controller.go) returns chart information for a stateless redis installation. 
-
-   A sample implementation of  `types.ManifestResolver` installing a chart from `./module-chart` in namespace `default` with the `--set` flag `nameOverride=custom-name-override` could look like this:
-
-var defaultResolver = &ManifestResolver{
-chartPath: "./module-chart",
-configFlags: types.Flags{
-"Namespace":       "redis", // can be omitted if namespace is pre-existing
-"CreateNamespace": true, // can be omitted if namespace is pre-existing
-},
-setFlags: types.Flags{
-"nameOverride": "custom-name-override",
-},
-}
-
-    
-
-   
-4. Run `make generate manifests`, to generate boilerplate code and manifests.
-
-### Custom reconciliation and status handling guidelines
-
-A custom resource is required to contain a specific set of properties in the Status object, to be tracked by the [lifecycle-manager](https://github.com/kyma-project/lifecycle-manager/tree/main).
-This is required to track the current state of the module, represented by this custom resource.
-
-1. Check the reference implementation of [Status](https://github.com/kyma-project/module-manager/blob/main/pkg/types/declaritive.go) reference implementation. The `.status.state` field of your custom resource _MUST_ contain one of these state values at all times.
-   On top, `.status` object could contain other relevant properties as per your requirements.
-2. The `.status.state` values have literal meaning behind them, so use them appropriately.
-
-In case you choose to not use the declarative option (as described in [this step](#default-declarative-reconciliation-and-status-handling)), you can use this contract as a base for your own state reconciliation.
-Note however, that you need to be careful in designing your reconciliation loop, and we recommend getting started with our declarative pattern first.
+3. This [reference implementation](controllers/sample_controller_rendered_resources_test.go) also covers reading resources from a concatenated YAML file and installing them on the cluster using [Server-side apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/).
+    Parts of this logic could be leveraged to implement your own controller logic. Checkout functions `getResourcesFromLocalPath()`, `ssa()` and `ssaStatus()` for implementation details.
 
 ### Local testing
 * Connect to your cluster and ensure `kubectl` is pointing to the desired cluster.
