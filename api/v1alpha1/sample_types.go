@@ -17,9 +17,13 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
-	"github.com/kyma-project/module-manager/pkg/types"
+var (
+	ConditionTypeInstallation = "Installation"
+	ConditionReasonReady      = "Ready"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -38,27 +42,45 @@ type Sample struct {
 }
 
 type SampleStatus struct {
-	types.Status `json:",inline"`
+	Status `json:",inline"`
+
+	// Conditions contain a set of conditionals to determine the State of Status.
+	// If all Conditions are met, State is expected to be in StateReady.
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
 	// add other fields to status subresource here
 }
 
-var _ types.CustomObject = &Sample{}
-
-func (s *Sample) GetStatus() types.Status {
-	return s.Status.Status
+func (s *SampleStatus) WithState(state State) *SampleStatus {
+	s.State = state
+	return s
 }
 
-func (s *Sample) SetStatus(status types.Status) {
-	s.Status.Status = status
-}
+func (s *SampleStatus) WithInstallConditionStatus(status metav1.ConditionStatus, objGeneration int64) *SampleStatus {
+	if s.Conditions == nil {
+		s.Conditions = make([]metav1.Condition, 0, 1)
+	}
 
-func (s *Sample) ComponentName() string {
-	return "sample-component-name"
+	condition := meta.FindStatusCondition(s.Conditions, ConditionTypeInstallation)
+
+	if condition == nil {
+		condition = &metav1.Condition{
+			Type:    ConditionTypeInstallation,
+			Reason:  ConditionReasonReady,
+			Message: "installation is ready and resources can be used",
+		}
+	}
+
+	condition.Status = status
+	condition.ObservedGeneration = objGeneration
+	meta.SetStatusCondition(&s.Conditions, *condition)
+	return s
 }
 
 type SampleSpec struct {
-	// TODO: Implement spec properties here
-	ReleaseName string `json:"releaseName,omitempty"`
+	// ResourceFilePath indicates the local dir path containing a .yaml or .yml,
+	// with all required resources to be processed
+	ResourceFilePath string `json:"resourceFilePath,omitempty"`
 }
 
 // +kubebuilder:object:root=true

@@ -38,14 +38,17 @@ spec:
             type: object
           spec:
             properties:
-              releaseName:
-                description: 'TODO: Implement spec properties here'
+              resourceFilePath:
+                description: ResourceFilePath indicates the local dir path containing
+                  a .yaml or .yml, with all required resources to be processed
                 type: string
             type: object
           status:
             properties:
               conditions:
-                description: Conditions associated with CustomStatus.
+                description: Conditions contain a set of conditionals to determine
+                  the State of Status. If all Conditions are met, State is expected
+                  to be in StateReady.
                 items:
                   description: "Condition contains details for one aspect of the current
                     state of this API Resource. --- This struct is intended for direct
@@ -114,8 +117,8 @@ spec:
                   type: object
                 type: array
               state:
-                description: State signifies current state of CustomObject. Value
-                  can be one of ("Ready", "Processing", "Error", "Deleting").
+                description: State signifies current state of Module CR. Value can
+                  be one of ("Ready", "Processing", "Error", "Deleting").
                 enum:
                 - Processing
                 - Deleting
