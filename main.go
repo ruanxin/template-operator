@@ -33,6 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	componentv1alpha1 "github.com/kyma-project/template-operator/api/v1alpha1"
+	operatorkymaprojectiov1alpha1 "github.com/kyma-project/template-operator/api/v1alpha1"
 	"github.com/kyma-project/template-operator/controllers"
 	//+kubebuilder:scaffold:imports
 )
@@ -66,6 +67,7 @@ func init() { //nolint:gochecknoinits
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(componentv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(operatorkymaprojectiov1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -105,6 +107,13 @@ func main() {
 		EventRecorder: mgr.GetEventRecorderFor(operatorName),
 	}).SetupWithManager(mgr, ratelimiter, flagVar.chartPath); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Sample")
+		os.Exit(1)
+	}
+	if err = (&controllers.SampleHelmReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "SampleHelm")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

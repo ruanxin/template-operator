@@ -52,13 +52,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/ratelimiter"
 )
 
-const (
-	requeueInterval = time.Second * 3
-	finalizer       = "sample.kyma-project.io/finalizer"
-	debugLogLevel   = 2
-	fieldOwner      = "sample.kyma-project.io/owner"
-)
-
 // SampleReconciler reconciles a Sample object
 type SampleReconciler struct {
 	client.Client
@@ -66,13 +59,6 @@ type SampleReconciler struct {
 	*rest.Config
 	// EventRecorder for creating k8s events
 	record.EventRecorder
-}
-
-type RateLimiter struct {
-	Burst           int
-	Frequency       int
-	BaseDelay       time.Duration
-	FailureMaxDelay time.Duration
 }
 
 type ManifestResources struct {
