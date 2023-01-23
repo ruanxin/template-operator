@@ -9,4 +9,4 @@ metadata:
     app.kubernetes.io/created-by: template-operator
   name: samplehelm-sample
 spec:
-  # TODO(user): Add fields here
+  chartPath: "./test/busybox"

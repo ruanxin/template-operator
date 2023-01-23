@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ .Chart.Name }}-pod
+  namespace: default
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
 spec:

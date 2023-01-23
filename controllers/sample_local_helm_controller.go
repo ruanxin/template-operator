@@ -17,29 +17,23 @@ limitations under the License.
 package controllers
 
 import (
-	"bufio"
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
-	"io"
-	"strings"
 
 	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/cli"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	errors2 "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	yamlUtil "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/yaml"
-
-	"helm.sh/helm/v3/pkg/chart/loader"
 
 	"github.com/kyma-project/template-operator/api/v1alpha1"
 )
@@ -52,10 +46,6 @@ type SampleHelmReconciler struct {
 	record.EventRecorder
 
 	Config *rest.Config
-}
-
-type ManifestResources struct {
-	Items []*unstructured.Unstructured
 }
 
 //+kubebuilder:rbac:groups=operator.kyma-project.io.kyma-project.io,resources=samplehelms,verbs=get;list;watch;create;update;patch;delete
@@ -116,9 +106,17 @@ func (r *SampleHelmReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *SampleHelmReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *SampleHelmReconciler) SetupWithManager(mgr ctrl.Manager, rateLimiter RateLimiter) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.SampleHelm{}).
+		WithOptions(controller.Options{
+			RateLimiter: TemplateRateLimiter(
+				rateLimiter.BaseDelay,
+				rateLimiter.FailureMaxDelay,
+				rateLimiter.Frequency,
+				rateLimiter.Burst,
+			),
+		}).
 		Complete(r)
 }
 
@@ -144,7 +142,7 @@ func (r *SampleHelmReconciler) ssaStatus(ctx context.Context, obj client.Object)
 		&client.SubResourcePatchOptions{PatchOptions: client.PatchOptions{FieldManager: fieldOwner}})
 }
 
-// ssaStatus patches the object using SSA
+// ssa patches the object using SSA
 func (r *SampleHelmReconciler) ssa(ctx context.Context, obj client.Object) error {
 	obj.SetManagedFields(nil)
 	obj.SetResourceVersion("")
@@ -197,7 +195,7 @@ func (r *SampleHelmReconciler) SetDefaultClientConfig(actionClient *action.Insta
 	actionClient.IncludeCRDs = true // include CRDs in the templated output
 	actionClient.ClientOnly = true
 	actionClient.ReleaseName = releaseName
-	actionClient.Namespace = v1.NamespaceDefault
+	actionClient.Namespace = metav1.NamespaceDefault
 
 	// default versioning if unspecified
 	if actionClient.Version == "" && actionClient.Devel {
@@ -205,39 +203,97 @@ func (r *SampleHelmReconciler) SetDefaultClientConfig(actionClient *action.Insta
 	}
 }
 
-func parseManifestStringToObjects(manifest string) (*ManifestResources, error) {
-	objects := &ManifestResources{}
-	reader := yamlUtil.NewYAMLReader(bufio.NewReader(strings.NewReader(manifest)))
-	for {
-		rawBytes, err := reader.Read()
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				return objects, nil
-			}
+func (r *SampleHelmReconciler) HandleInitialState(ctx context.Context, objectInstance *v1alpha1.SampleHelm) error {
+	status := objectInstance.Status
 
-			return nil, fmt.Errorf("invalid YAML doc: %w", err)
-		}
+	return r.setStatusForObjectInstance(ctx, objectInstance, status.
+		WithState(v1alpha1.StateProcessing).
+		WithInstallConditionStatus(metav1.ConditionUnknown, objectInstance.GetGeneration()))
+}
 
-		rawBytes = bytes.TrimSpace(rawBytes)
-		unstructuredObj := unstructured.Unstructured{}
-		if err := yaml.Unmarshal(rawBytes, &unstructuredObj); err != nil {
-			return nil, err
-		}
-
-		if len(rawBytes) == 0 || bytes.Equal(rawBytes, []byte("null")) || len(unstructuredObj.Object) == 0 {
-			continue
-		}
-
-		objects.Items = append(objects.Items, &unstructuredObj)
+func (r *SampleHelmReconciler) HandleProcessingState(ctx context.Context, objectInstance *v1alpha1.SampleHelm) error {
+	status := objectInstance.Status
+	if err := r.processResources(ctx, objectInstance); err != nil {
+		r.Event(objectInstance, "Warning", "ResourcesInstall", err.Error())
+		return r.setStatusForObjectInstance(ctx, objectInstance, status.
+			WithState(v1alpha1.StateError).
+			WithInstallConditionStatus(metav1.ConditionFalse, objectInstance.GetGeneration()))
 	}
+	// set eventual state to Ready - if no errors were found
+	return r.setStatusForObjectInstance(ctx, objectInstance, status.
+		WithState(v1alpha1.StateReady).
+		WithInstallConditionStatus(metav1.ConditionTrue, objectInstance.GetGeneration()))
 }
 
-func (r *SampleHelmReconciler) HandleInitialState(ctx context.Context, v *v1alpha1.SampleHelm) error {
-
+func (r *SampleHelmReconciler) HandleErrorState(ctx context.Context, objectInstance *v1alpha1.SampleHelm) error {
+	status := objectInstance.Status
+	if err := r.processResources(ctx, objectInstance); err != nil {
+		return err
+	}
+	// set eventual state to Ready - if no errors were found
+	return r.setStatusForObjectInstance(ctx, objectInstance, status.
+		WithState(v1alpha1.StateReady).
+		WithInstallConditionStatus(metav1.ConditionTrue, objectInstance.GetGeneration()))
 }
 
-func (r *SampleHelmReconciler) HandleProcessingState(ctx context.Context, obj *v1alpha1.SampleHelm) error {
-	resources, err := r.Render(ctx, obj)
+// HandleDeletingState processed the deletion on the reconciled resource.
+// Once the deletion if processed the relevant finalizers (if applied) are removed.
+func (r *SampleHelmReconciler) HandleDeletingState(ctx context.Context, objectInstance *v1alpha1.SampleHelm) error {
+	r.Event(objectInstance, "Normal", "Deleting", "resource deleting")
+	logger := log.FromContext(ctx)
+
+	status := objectInstance.Status
+
+	resources, err := r.Render(ctx, objectInstance)
+	if err != nil && controllerutil.RemoveFinalizer(objectInstance, finalizer) {
+		// if error is encountered simply remove the finalizer and delete the reconciled resource
+		return r.Client.Update(ctx, objectInstance)
+	}
+	r.Event(objectInstance, "Normal", "ResourcesDelete", "deleting resources")
+
+	installErrs := make([]error, 0)
+
+	// instead of looping a concurrent mechanism can also be implemented
+	for _, resource := range resources.Items {
+		if err = r.Client.Delete(ctx, resource); err != nil && !errors2.IsNotFound(err) {
+			installErrs = append(installErrs, err)
+		}
+	}
+
+	if len(installErrs) != 0 {
+		buf := &bytes.Buffer{}
+		for _, err = range installErrs {
+			_, _ = fmt.Fprintf(buf, "%v\n", err.Error())
+		}
+
+		logger.Error(fmt.Errorf(buf.String()), "error during uninstallation of resources")
+		r.Event(objectInstance, "Warning", "ResourcesDelete", "deleting resources error")
+		return r.setStatusForObjectInstance(ctx, objectInstance, status.
+			WithState(v1alpha1.StateError).
+			WithInstallConditionStatus(metav1.ConditionFalse, objectInstance.GetGeneration()))
+	}
+
+	// if resources are ready to be deleted, remove finalizer
+	if controllerutil.RemoveFinalizer(objectInstance, finalizer) {
+		return r.Client.Update(ctx, objectInstance)
+	}
+	return nil
+}
+
+// HandleReadyState checks for the consistency of reconciled resource, by verifying the underlying resources.
+func (r *SampleHelmReconciler) HandleReadyState(ctx context.Context, objectInstance *v1alpha1.SampleHelm) error {
+	status := objectInstance.Status
+	if err := r.processResources(ctx, objectInstance); err != nil {
+		r.Event(objectInstance, "Warning", "ResourcesInstall", err.Error())
+		return r.setStatusForObjectInstance(ctx, objectInstance, status.
+			WithState(v1alpha1.StateError).
+			WithInstallConditionStatus(metav1.ConditionFalse, objectInstance.GetGeneration()))
+	}
+	return nil
+}
+
+func (r *SampleHelmReconciler) processResources(ctx context.Context, objectInstance *v1alpha1.SampleHelm) error {
+	resources, err := r.Render(ctx, objectInstance)
 	if err != nil {
 		return err
 	}
@@ -254,21 +310,11 @@ func (r *SampleHelmReconciler) HandleProcessingState(ctx context.Context, obj *v
 
 	if len(installErrs) != 0 {
 		buf := &bytes.Buffer{}
-		for _, err := range installErrs {
+		for _, err = range installErrs {
 			_, _ = fmt.Fprintf(buf, "%v\n", err.Error())
 		}
 		return fmt.Errorf(buf.String())
 	}
-}
 
-func (r *SampleHelmReconciler) HandleDeletingState(ctx context.Context, v *v1alpha1.SampleHelm) error {
-
-}
-
-func (r *SampleHelmReconciler) HandleErrorState(ctx context.Context, v *v1alpha1.SampleHelm) error {
-
-}
-
-func (r *SampleHelmReconciler) HandleReadyState(ctx context.Context, v *v1alpha1.SampleHelm) error {
-
+	return err
 }
