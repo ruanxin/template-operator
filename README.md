@@ -213,7 +213,7 @@ _Warning_: This sample implementation is only for reference. You could copy part
     ````
     
 3. The reference controller implementations listed above use [Server-side apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/) instead of conventional methods to process resources on the target cluster.
-    Parts of this logic could be leveraged to implement your own controller logic. Checkout functions `getResourcesFromLocalPath()`, `ssa()` and `ssaStatus()` for implementation details.
+    Parts of this logic could be leveraged to implement your own controller logic. Checkout functions inside these controllers for state management and other implementation details.
 
 ### Local testing
 * Connect to your cluster and ensure `kubectl` is pointing to the desired cluster.

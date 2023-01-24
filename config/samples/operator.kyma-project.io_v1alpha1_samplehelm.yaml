@@ -9,4 +9,4 @@ metadata:
     app.kubernetes.io/created-by: template-operator
   name: samplehelm-sample
 spec:
-  chartPath: "./test/busybox"
+  chartPath: "your/path"
