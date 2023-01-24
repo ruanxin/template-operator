@@ -105,14 +105,14 @@ func main() {
 		Client:        mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),
 		EventRecorder: mgr.GetEventRecorderFor(operatorName),
-	}).SetupWithManager(mgr, ratelimiter, flagVar.chartPath); err != nil {
+	}).SetupWithManager(mgr, ratelimiter); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Sample")
 		os.Exit(1)
 	}
 	if err = (&controllers.SampleHelmReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	}).SetupWithManager(mgr, ratelimiter); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "SampleHelm")
 		os.Exit(1)
 	}

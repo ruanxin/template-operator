@@ -2,7 +2,6 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: {{ .Chart.Name }}-pod
-  namespace: default
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
 spec:

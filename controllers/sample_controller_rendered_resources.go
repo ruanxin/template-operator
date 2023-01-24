@@ -22,10 +22,8 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/go-logr/logr"
-	"golang.org/x/time/rate"
 	errors2 "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -33,7 +31,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -42,7 +39,6 @@ import (
 	"github.com/kyma-project/template-operator/api/v1alpha1"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/ratelimiter"
 )
 
 // SampleReconciler reconciles a Sample object
@@ -83,16 +79,6 @@ func (r *SampleReconciler) SetupWithManager(mgr ctrl.Manager, rateLimiter RateLi
 			),
 		}).
 		Complete(r)
-}
-
-// TemplateRateLimiter implements a rate limiter for a client-go.workqueue.  It has
-// both an overall (token bucket) and per-item (exponential) rate limiting.
-func TemplateRateLimiter(failureBaseDelay time.Duration, failureMaxDelay time.Duration,
-	frequency int, burst int,
-) ratelimiter.RateLimiter {
-	return workqueue.NewMaxOfRateLimiter(
-		workqueue.NewItemExponentialFailureRateLimiter(failureBaseDelay, failureMaxDelay),
-		&workqueue.BucketRateLimiter{Limiter: rate.NewLimiter(rate.Limit(frequency), burst)})
 }
 
 // Reconcile is the entry point from the controller-runtime framework.
