@@ -43,7 +43,6 @@ const (
 	rateLimiterFrequencyDefault = 30
 	failureBaseDelayDefault     = 1 * time.Second
 	failureMaxDelayDefault      = 1000 * time.Second
-	chartPath                   = "./module-chart"
 	operatorName                = "template-operator"
 )
 
@@ -60,7 +59,6 @@ type FlagVar struct {
 	failureMaxDelay      time.Duration
 	rateLimiterFrequency int
 	rateLimiterBurst     int
-	chartPath            string
 }
 
 func init() { //nolint:gochecknoinits
