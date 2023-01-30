@@ -113,6 +113,7 @@ func main() {
 		Client:        mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),
 		EventRecorder: mgr.GetEventRecorderFor(operatorName),
+		Config:        mgr.GetConfig(),
 	}).SetupWithManager(mgr, ratelimiter); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "SampleHelm")
 		os.Exit(1)
@@ -150,7 +151,5 @@ func defineFlagVar() *FlagVar {
 		"Indicates the failure base delay in seconds for rate limiter.")
 	flag.DurationVar(&flagVar.failureMaxDelay, "failure-max-delay", failureMaxDelayDefault,
 		"Indicates the failure max delay in seconds")
-	flag.StringVar(&flagVar.chartPath, "module-chart-path", chartPath,
-		"Represents path containing chart to be installed")
 	return flagVar
 }

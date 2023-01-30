@@ -12,7 +12,7 @@ metadata:
   name: samplehelm-viewer-role
 rules:
 - apiGroups:
-  - operator.kyma-project.io.kyma-project.io
+  - operator.kyma-project.io
   resources:
   - samplehelms
   verbs:
@@ -20,7 +20,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - operator.kyma-project.io.kyma-project.io
+  - operator.kyma-project.io
   resources:
   - samplehelms/status
   verbs:

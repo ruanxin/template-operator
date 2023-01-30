@@ -18,7 +18,7 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: SampleHelm is the Schema for the samplehelms API
+        description: SampleHelm is the Schema for the samplehelms API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -33,14 +33,14 @@ spec:
           metadata:
             type: object
           spec:
-            description: SampleHelmSpec defines the desired state of SampleHelm
+            description: SampleHelmSpec defines the desired state of SampleHelm.
             properties:
               chartPath:
                 description: ChartPath represents the local path to the Helm chart
                 type: string
             type: object
           status:
-            description: SampleHelmStatus defines the observed state of SampleHelm
+            description: SampleHelmStatus defines the observed state of SampleHelm.
             properties:
               conditions:
                 description: Conditions contain a set of conditionals to determine

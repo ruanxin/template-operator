@@ -36,6 +36,32 @@ rules:
 - apiGroups:
   - operator.kyma-project.io
   resources:
+  - samplehelms
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - operator.kyma-project.io
+  resources:
+  - samplehelms/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - operator.kyma-project.io
+  resources:
+  - samplehelms/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - operator.kyma-project.io
+  resources:
   - samples
   verbs:
   - create
@@ -55,32 +81,6 @@ rules:
   - operator.kyma-project.io
   resources:
   - samples/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - operator.kyma-project.io.kyma-project.io
-  resources:
-  - samplehelms
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - operator.kyma-project.io.kyma-project.io
-  resources:
-  - samplehelms/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - operator.kyma-project.io.kyma-project.io
-  resources:
-  - samplehelms/status
   verbs:
   - get
   - patch

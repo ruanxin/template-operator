@@ -24,7 +24,7 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// SampleHelmSpec defines the desired state of SampleHelm
+// SampleHelmSpec defines the desired state of SampleHelm.
 type SampleHelmSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -33,7 +33,7 @@ type SampleHelmSpec struct {
 	ChartPath string `json:"chartPath,omitempty"`
 }
 
-// SampleHelmStatus defines the observed state of SampleHelm
+// SampleHelmStatus defines the observed state of SampleHelm.
 type SampleHelmStatus struct {
 	Status `json:",inline"`
 
@@ -73,7 +73,7 @@ func (s *SampleHelmStatus) WithInstallConditionStatus(status metav1.ConditionSta
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// SampleHelm is the Schema for the samplehelms API
+// SampleHelm is the Schema for the samplehelms API.
 type SampleHelm struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -84,7 +84,7 @@ type SampleHelm struct {
 
 //+kubebuilder:object:root=true
 
-// SampleHelmList contains a list of SampleHelm
+// SampleHelmList contains a list of SampleHelm.
 type SampleHelmList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

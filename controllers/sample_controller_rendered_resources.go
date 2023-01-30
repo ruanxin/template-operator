@@ -41,7 +41,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 )
 
-// SampleReconciler reconciles a Sample object
+// SampleReconciler reconciles a Sample object.
 type SampleReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
@@ -290,7 +290,7 @@ func getResourcesFromLocalPath(dirPath string, logger logr.Logger) (*ManifestRes
 	return parseManifestStringToObjects(string(fileBytes))
 }
 
-// ssaStatus patches status using SSA on the passed object
+// ssaStatus patches status using SSA on the passed object.
 func (r *SampleReconciler) ssaStatus(ctx context.Context, obj client.Object) error {
 	obj.SetManagedFields(nil)
 	obj.SetResourceVersion("")
@@ -298,7 +298,7 @@ func (r *SampleReconciler) ssaStatus(ctx context.Context, obj client.Object) err
 		&client.SubResourcePatchOptions{PatchOptions: client.PatchOptions{FieldManager: fieldOwner}})
 }
 
-// ssa patches the object using SSA
+// ssa patches the object using SSA.
 func (r *SampleReconciler) ssa(ctx context.Context, obj client.Object) error {
 	obj.SetManagedFields(nil)
 	obj.SetResourceVersion("")

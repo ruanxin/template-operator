@@ -23,7 +23,8 @@ var (
 )
 
 func testFn(sampleCR *v1alpha1.Sample, desiredState v1alpha1.State, desiredConditionStatus metav1.ConditionStatus,
-	resourceCheck func(g Gomega) bool) {
+	resourceCheck func(g Gomega) bool,
+) {
 	// create SampleCR
 	Expect(k8sClient.Create(ctx, sampleCR)).To(Succeed())
 

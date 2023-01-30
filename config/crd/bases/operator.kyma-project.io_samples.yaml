@@ -22,7 +22,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Sample is the Schema for the samples API
+        description: Sample is the Schema for the samples API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation

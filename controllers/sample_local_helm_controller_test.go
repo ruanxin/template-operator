@@ -16,12 +16,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var (
-	helmPodName = "busybox-helm-pod"
-)
+var helmPodName = "busybox-helm-pod"
 
 func testHelmFn(sampleCR *v1alpha1.SampleHelm, desiredState v1alpha1.State, desiredConditionStatus metav1.ConditionStatus,
-	resourceCheck func(g Gomega) bool) {
+	resourceCheck func(g Gomega) bool,
+) {
 	// create SampleCR
 	Expect(k8sClient.Create(ctx, sampleCR)).To(Succeed())
 

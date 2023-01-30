@@ -1,4 +1,4 @@
-apiVersion: operator.kyma-project.io.kyma-project.io/v1alpha1
+apiVersion: operator.kyma-project.io/v1alpha1
 kind: SampleHelm
 metadata:
   labels:
@@ -9,4 +9,4 @@ metadata:
     app.kubernetes.io/created-by: template-operator
   name: samplehelm-sample
 spec:
-  chartPath: "your/path"
+  chartPath: "./module-chart"

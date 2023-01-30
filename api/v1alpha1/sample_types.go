@@ -26,21 +26,6 @@ var (
 	ConditionReasonReady      = "Ready"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-//+kubebuilder:printcolumn:name="State",type=string,JSONPath=".status.state"
-
-// Sample is the Schema for the samples API
-type Sample struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   SampleSpec   `json:"spec,omitempty"`
-	Status SampleStatus `json:"status,omitempty"`
-}
-
 type SampleStatus struct {
 	Status `json:",inline"`
 
@@ -83,9 +68,22 @@ type SampleSpec struct {
 	ResourceFilePath string `json:"resourceFilePath,omitempty"`
 }
 
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="State",type=string,JSONPath=".status.state"
+
+// Sample is the Schema for the samples API.
+type Sample struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   SampleSpec   `json:"spec,omitempty"`
+	Status SampleStatus `json:"status,omitempty"`
+}
+
 // +kubebuilder:object:root=true
 
-// SampleList contains a list of Sample
+// SampleList contains a list of Sample.
 type SampleList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

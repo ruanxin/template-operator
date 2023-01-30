@@ -41,7 +41,7 @@ import (
 
 var CustomNs = "helm-custom-ns"
 
-// SampleHelmReconciler reconciles a SampleHelm object
+// SampleHelmReconciler reconciles a SampleHelm object.
 type SampleHelmReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
@@ -51,9 +51,9 @@ type SampleHelmReconciler struct {
 	Config *rest.Config
 }
 
-//+kubebuilder:rbac:groups=operator.kyma-project.io.kyma-project.io,resources=samplehelms,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=operator.kyma-project.io.kyma-project.io,resources=samplehelms/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=operator.kyma-project.io.kyma-project.io,resources=samplehelms/finalizers,verbs=update
+//+kubebuilder:rbac:groups=operator.kyma-project.io,resources=samplehelms,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=operator.kyma-project.io,resources=samplehelms/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=operator.kyma-project.io,resources=samplehelms/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -213,7 +213,7 @@ func (r *SampleHelmReconciler) setStatusForObjectInstance(ctx context.Context, o
 	return nil
 }
 
-// ssaStatus patches status using SSA on the passed object
+// ssaStatus patches status using SSA on the passed object.
 func (r *SampleHelmReconciler) ssaStatus(ctx context.Context, obj client.Object) error {
 	obj.SetManagedFields(nil)
 	obj.SetResourceVersion("")
@@ -221,7 +221,7 @@ func (r *SampleHelmReconciler) ssaStatus(ctx context.Context, obj client.Object)
 		&client.SubResourcePatchOptions{PatchOptions: client.PatchOptions{FieldManager: fieldOwner}})
 }
 
-// ssa patches the object using SSA
+// ssa patches the object using SSA.
 func (r *SampleHelmReconciler) ssa(ctx context.Context, obj client.Object) error {
 	obj.SetManagedFields(nil)
 	obj.SetResourceVersion("")

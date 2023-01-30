@@ -4,4 +4,4 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: $(CERTIFICATE_NAMESPACE)/$(CERTIFICATE_NAME)
-  name: samplehelms.operator.kyma-project.io.kyma-project.io
+  name: samplehelms.operator.kyma-project.io
