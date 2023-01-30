@@ -110,8 +110,9 @@ func main() {
 		os.Exit(1)
 	}
 	if err = (&controllers.SampleHelmReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		EventRecorder: mgr.GetEventRecorderFor(operatorName),
 	}).SetupWithManager(mgr, ratelimiter); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "SampleHelm")
 		os.Exit(1)
