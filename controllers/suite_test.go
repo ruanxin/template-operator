@@ -36,6 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	componentv1alpha1 "github.com/kyma-project/template-operator/api/v1alpha1"
+	operatorkymaprojectiov1alpha1 "github.com/kyma-project/template-operator/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -43,12 +44,13 @@ import (
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var (
-	k8sClient  client.Client                 //nolint:gochecknoglobals
-	k8sManager manager.Manager               //nolint:gochecknoglobals
-	testEnv    *envtest.Environment          //nolint:gochecknoglobals
-	ctx        context.Context               //nolint:gochecknoglobals
-	cancel     context.CancelFunc            //nolint:gochecknoglobals
-	reconciler *controllers.SampleReconciler //nolint:gochecknoglobals
+	k8sClient      client.Client                     //nolint:gochecknoglobals
+	k8sManager     manager.Manager                   //nolint:gochecknoglobals
+	testEnv        *envtest.Environment              //nolint:gochecknoglobals
+	ctx            context.Context                   //nolint:gochecknoglobals
+	cancel         context.CancelFunc                //nolint:gochecknoglobals
+	reconciler     *controllers.SampleReconciler     //nolint:gochecknoglobals
+	reconcilerHelm *controllers.SampleHelmReconciler //nolint:gochecknoglobals
 )
 
 const (
@@ -89,6 +91,9 @@ var _ = BeforeSuite(func() {
 	err = componentv1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
+	err = operatorkymaprojectiov1alpha1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
 	//+kubebuilder:scaffold:scheme
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
@@ -107,7 +112,16 @@ var _ = BeforeSuite(func() {
 		EventRecorder: k8sManager.GetEventRecorderFor("tests"),
 	}
 
-	err = reconciler.SetupWithManager(k8sManager, rateLimiter, testChartPath)
+	reconcilerHelm = &controllers.SampleHelmReconciler{
+		Client:        k8sManager.GetClient(),
+		Scheme:        scheme.Scheme,
+		EventRecorder: k8sManager.GetEventRecorderFor("tests"),
+		Config:        k8sManager.GetConfig(),
+	}
+
+	err = reconciler.SetupWithManager(k8sManager, rateLimiter)
+	Expect(err).ToNot(HaveOccurred())
+	err = reconcilerHelm.SetupWithManager(k8sManager, rateLimiter)
 	Expect(err).ToNot(HaveOccurred())
 
 	go func() {

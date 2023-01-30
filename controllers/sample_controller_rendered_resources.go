@@ -17,62 +17,37 @@ limitations under the License.
 package controllers
 
 import (
-	"bufio"
-	"bytes"
 	"context"
-	"errors"
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
-	"time"
 
 	"github.com/go-logr/logr"
-	"golang.org/x/time/rate"
 	errors2 "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
-	yamlUtil "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/yaml"
 
 	"github.com/kyma-project/template-operator/api/v1alpha1"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/ratelimiter"
 )
 
-const (
-	requeueInterval = time.Second * 3
-	finalizer       = "sample.kyma-project.io/finalizer"
-	debugLogLevel   = 2
-	fieldOwner      = "sample.kyma-project.io/owner"
-)
-
-// SampleReconciler reconciles a Sample object
+// SampleReconciler reconciles a Sample object.
 type SampleReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 	*rest.Config
 	// EventRecorder for creating k8s events
 	record.EventRecorder
-}
-
-type RateLimiter struct {
-	Burst           int
-	Frequency       int
-	BaseDelay       time.Duration
-	FailureMaxDelay time.Duration
 }
 
 type ManifestResources struct {
@@ -90,7 +65,7 @@ type ManifestResources struct {
 //+kubebuilder:rbac:groups="*",resources="*",verbs="*"
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *SampleReconciler) SetupWithManager(mgr ctrl.Manager, rateLimiter RateLimiter, chartPath string) error {
+func (r *SampleReconciler) SetupWithManager(mgr ctrl.Manager, rateLimiter RateLimiter) error {
 	r.Config = mgr.GetConfig()
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -104,16 +79,6 @@ func (r *SampleReconciler) SetupWithManager(mgr ctrl.Manager, rateLimiter RateLi
 			),
 		}).
 		Complete(r)
-}
-
-// TemplateRateLimiter implements a rate limiter for a client-go.workqueue.  It has
-// both an overall (token bucket) and per-item (exponential) rate limiting.
-func TemplateRateLimiter(failureBaseDelay time.Duration, failureMaxDelay time.Duration,
-	frequency int, burst int,
-) ratelimiter.RateLimiter {
-	return workqueue.NewMaxOfRateLimiter(
-		workqueue.NewItemExponentialFailureRateLimiter(failureBaseDelay, failureMaxDelay),
-		&workqueue.BucketRateLimiter{Limiter: rate.NewLimiter(rate.Limit(frequency), burst)})
 }
 
 // Reconcile is the entry point from the controller-runtime framework.
@@ -132,7 +97,7 @@ func (r *SampleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	// check if deletionTimestamp is set, retry until it gets deleted
-	status := getStatusFromObjectInstance(&objectInstance)
+	status := getStatusFromSample(&objectInstance)
 
 	// set state to Deleting if not set for an object with deletion timestamp
 	if !objectInstance.GetDeletionTimestamp().IsZero() &&
@@ -164,7 +129,7 @@ func (r *SampleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 // HandleInitialState bootstraps state handling for the reconciled resource.
 func (r *SampleReconciler) HandleInitialState(ctx context.Context, objectInstance *v1alpha1.Sample) error {
-	status := getStatusFromObjectInstance(objectInstance)
+	status := getStatusFromSample(objectInstance)
 
 	return r.setStatusForObjectInstance(ctx, objectInstance, status.
 		WithState(v1alpha1.StateProcessing).
@@ -174,7 +139,7 @@ func (r *SampleReconciler) HandleInitialState(ctx context.Context, objectInstanc
 // HandleProcessingState processes the reconciled resource by processing the underlying resources.
 // Based on the processing either a success or failure state is set on the reconciled resource.
 func (r *SampleReconciler) HandleProcessingState(ctx context.Context, objectInstance *v1alpha1.Sample) error {
-	status := getStatusFromObjectInstance(objectInstance)
+	status := getStatusFromSample(objectInstance)
 	if err := r.processResources(ctx, objectInstance); err != nil {
 		r.Event(objectInstance, "Warning", "ResourcesInstall", err.Error())
 		return r.setStatusForObjectInstance(ctx, objectInstance, status.
@@ -187,8 +152,9 @@ func (r *SampleReconciler) HandleProcessingState(ctx context.Context, objectInst
 		WithInstallConditionStatus(metav1.ConditionTrue, objectInstance.GetGeneration()))
 }
 
+// HandleErrorState handles error recovery for the reconciled resource.
 func (r *SampleReconciler) HandleErrorState(ctx context.Context, objectInstance *v1alpha1.Sample) error {
-	status := getStatusFromObjectInstance(objectInstance)
+	status := getStatusFromSample(objectInstance)
 	if err := r.processResources(ctx, objectInstance); err != nil {
 		return err
 	}
@@ -204,7 +170,7 @@ func (r *SampleReconciler) HandleDeletingState(ctx context.Context, objectInstan
 	r.Event(objectInstance, "Normal", "Deleting", "resource deleting")
 	logger := log.FromContext(ctx)
 
-	status := getStatusFromObjectInstance(objectInstance)
+	status := getStatusFromSample(objectInstance)
 
 	resourceObjs, err := getResourcesFromLocalPath(objectInstance.Spec.ResourceFilePath, logger)
 	if err != nil && controllerutil.RemoveFinalizer(objectInstance, finalizer) {
@@ -217,7 +183,7 @@ func (r *SampleReconciler) HandleDeletingState(ctx context.Context, objectInstan
 	// so please make sure the types are available on the target cluster
 	for _, obj := range resourceObjs.Items {
 		if err = r.Client.Delete(ctx, obj); err != nil && !errors2.IsNotFound(err) {
-			logger.Error(err, "error during installation of resources")
+			logger.Error(err, "error during uninstallation of resources")
 			r.Event(objectInstance, "Warning", "ResourcesDelete", "deleting resources error")
 			return r.setStatusForObjectInstance(ctx, objectInstance, status.
 				WithState(v1alpha1.StateError).
@@ -234,7 +200,7 @@ func (r *SampleReconciler) HandleDeletingState(ctx context.Context, objectInstan
 
 // HandleReadyState checks for the consistency of reconciled resource, by verifying the underlying resources.
 func (r *SampleReconciler) HandleReadyState(ctx context.Context, objectInstance *v1alpha1.Sample) error {
-	status := getStatusFromObjectInstance(objectInstance)
+	status := getStatusFromSample(objectInstance)
 	if err := r.processResources(ctx, objectInstance); err != nil {
 		r.Event(objectInstance, "Warning", "ResourcesInstall", err.Error())
 		return r.setStatusForObjectInstance(ctx, objectInstance, status.
@@ -280,7 +246,7 @@ func (r *SampleReconciler) processResources(ctx context.Context, objectInstance 
 	return nil
 }
 
-func getStatusFromObjectInstance(objectInstance *v1alpha1.Sample) v1alpha1.SampleStatus {
+func getStatusFromSample(objectInstance *v1alpha1.Sample) v1alpha1.SampleStatus {
 	return objectInstance.Status
 }
 
@@ -324,35 +290,7 @@ func getResourcesFromLocalPath(dirPath string, logger logr.Logger) (*ManifestRes
 	return parseManifestStringToObjects(string(fileBytes))
 }
 
-// parseManifestStringToObjects parses the string of resources into a list of unstructured resources.
-func parseManifestStringToObjects(manifest string) (*ManifestResources, error) {
-	objects := &ManifestResources{}
-	reader := yamlUtil.NewYAMLReader(bufio.NewReader(strings.NewReader(manifest)))
-	for {
-		rawBytes, err := reader.Read()
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				return objects, nil
-			}
-
-			return nil, fmt.Errorf("invalid YAML doc: %w", err)
-		}
-
-		rawBytes = bytes.TrimSpace(rawBytes)
-		unstructuredObj := unstructured.Unstructured{}
-		if err := yaml.Unmarshal(rawBytes, &unstructuredObj); err != nil {
-			objects.Blobs = append(objects.Blobs, append(bytes.TrimPrefix(rawBytes, []byte("---\n")), '\n'))
-		}
-
-		if len(rawBytes) == 0 || bytes.Equal(rawBytes, []byte("null")) || len(unstructuredObj.Object) == 0 {
-			continue
-		}
-
-		objects.Items = append(objects.Items, &unstructuredObj)
-	}
-}
-
-// ssaStatus patches status using SSA on the passed object
+// ssaStatus patches status using SSA on the passed object.
 func (r *SampleReconciler) ssaStatus(ctx context.Context, obj client.Object) error {
 	obj.SetManagedFields(nil)
 	obj.SetResourceVersion("")
@@ -360,7 +298,7 @@ func (r *SampleReconciler) ssaStatus(ctx context.Context, obj client.Object) err
 		&client.SubResourcePatchOptions{PatchOptions: client.PatchOptions{FieldManager: fieldOwner}})
 }
 
-// ssaStatus patches the object using SSA
+// ssa patches the object using SSA.
 func (r *SampleReconciler) ssa(ctx context.Context, obj client.Object) error {
 	obj.SetManagedFields(nil)
 	obj.SetResourceVersion("")

@@ -5,24 +5,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
-  name: samples.operator.kyma-project.io
+  name: samplehelms.operator.kyma-project.io
 spec:
   group: operator.kyma-project.io
   names:
-    kind: Sample
-    listKind: SampleList
-    plural: samples
-    singular: sample
+    kind: SampleHelm
+    listKind: SampleHelmList
+    plural: samplehelms
+    singular: samplehelm
   scope: Namespaced
   versions:
-  - additionalPrinterColumns:
-    - jsonPath: .status.state
-      name: State
-      type: string
-    name: v1alpha1
+  - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Sample is the Schema for the samples API.
+        description: SampleHelm is the Schema for the samplehelms API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -37,13 +33,14 @@ spec:
           metadata:
             type: object
           spec:
+            description: SampleHelmSpec defines the desired state of SampleHelm.
             properties:
-              resourceFilePath:
-                description: ResourceFilePath indicates the local dir path containing
-                  a .yaml or .yml, with all required resources to be processed
+              chartPath:
+                description: ChartPath represents the local path to the Helm chart
                 type: string
             type: object
           status:
+            description: SampleHelmStatus defines the observed state of SampleHelm.
             properties:
               conditions:
                 description: Conditions contain a set of conditionals to determine

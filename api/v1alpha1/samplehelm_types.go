@@ -21,12 +21,20 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var (
-	ConditionTypeInstallation = "Installation"
-	ConditionReasonReady      = "Ready"
-)
+// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
+// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-type SampleStatus struct {
+// SampleHelmSpec defines the desired state of SampleHelm.
+type SampleHelmSpec struct {
+	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+	// Important: Run "make" to regenerate code after modifying this file
+
+	// ChartPath represents the local path to the Helm chart
+	ChartPath string `json:"chartPath,omitempty"`
+}
+
+// SampleHelmStatus defines the observed state of SampleHelm.
+type SampleHelmStatus struct {
 	Status `json:",inline"`
 
 	// Conditions contain a set of conditionals to determine the State of Status.
@@ -36,12 +44,12 @@ type SampleStatus struct {
 	// add other fields to status subresource here
 }
 
-func (s *SampleStatus) WithState(state State) *SampleStatus {
+func (s *SampleHelmStatus) WithState(state State) *SampleHelmStatus {
 	s.State = state
 	return s
 }
 
-func (s *SampleStatus) WithInstallConditionStatus(status metav1.ConditionStatus, objGeneration int64) *SampleStatus {
+func (s *SampleHelmStatus) WithInstallConditionStatus(status metav1.ConditionStatus, objGeneration int64) *SampleHelmStatus {
 	if s.Conditions == nil {
 		s.Conditions = make([]metav1.Condition, 0, 1)
 	}
@@ -62,34 +70,27 @@ func (s *SampleStatus) WithInstallConditionStatus(status metav1.ConditionStatus,
 	return s
 }
 
-type SampleSpec struct {
-	// ResourceFilePath indicates the local dir path containing a .yaml or .yml,
-	// with all required resources to be processed
-	ResourceFilePath string `json:"resourceFilePath,omitempty"`
-}
-
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:printcolumn:name="State",type=string,JSONPath=".status.state"
 
-// Sample is the Schema for the samples API.
-type Sample struct {
+// SampleHelm is the Schema for the samplehelms API.
+type SampleHelm struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   SampleSpec   `json:"spec,omitempty"`
-	Status SampleStatus `json:"status,omitempty"`
+	Spec   SampleHelmSpec   `json:"spec,omitempty"`
+	Status SampleHelmStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
-// SampleList contains a list of Sample.
-type SampleList struct {
+// SampleHelmList contains a list of SampleHelm.
+type SampleHelmList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Sample `json:"items"`
+	Items           []SampleHelm `json:"items"`
 }
 
-func init() { //nolint:gochecknoinits
-	SchemeBuilder.Register(&Sample{}, &SampleList{})
+func init() {
+	SchemeBuilder.Register(&SampleHelm{}, &SampleHelmList{})
 }

@@ -165,10 +165,11 @@ Further reading: [Kustomize built-in commonLabels](https://github.com/kubernetes
     Include the `State` values in your `Status` sub-resource, either through inline reference or direct inclusion. These values have literal meaning behind them, so use them appropriately.
 
 2. Optionally, you can add additional fields to your `Status` sub-resource. 
-For instance, `Conditions` are added to `SampleCR` in the [API definition](api/v1alpha1/sample_types.go), along with the required `State` values using inline reference.
+3. For instance, `Conditions` are added to `SampleCR` in the [API definition](api/v1alpha1/sample_types.go) and `SampleHelmCR` in the [API definition](api/v1alpha1/samplehelm_types.go).
+This also includes the required `State` values, using an inline reference.
 
     <details>
-    <summary><b>Reference implementation</b></summary>
+    <summary><b>Reference implementation SampleCR</b></summary>
     
     ```go
     package v1alpha1
@@ -201,15 +202,18 @@ _Warning_: This sample implementation is only for reference. You could copy part
 
 1. Implement `State` handling to represent the corresponding state of the reconciled resource, by following [kubebuilder](https://book.kubebuilder.io/) guidelines to implement controllers.
 
-2. Optionally, you could refer to the `SampleCR` [controller implementation](controllers/sample_controller_rendered_resources_test.go) for setting appropriate `State` and `Conditions` values to your `Status` sub-resource, such as:
+2. You could refer either to `SampleCR` [controller implementation](controllers/sample_controller_rendered_resources.go) or `SampleHelmCR` [controller implementation](controllers/sample_local_helm_controller.go) for setting appropriate `State` and `Conditions` values to your `Status` sub-resource.
+
+    `SampleCR` is reconciled to install / uninstall a list of rendered resources from a YAML file on the file system. Whereas `SampleHelmCR` is reconciled to install / uninstall (using SSA, see next point) rendered resources from a local Helm Chart. The latter uses the Helm library purely to render resources.
+    
     ````go   
     r.setStatusForObjectInstance(ctx, objectInstance, status.
     WithState(v1alpha1.StateReady).
     WithInstallConditionStatus(metav1.ConditionTrue, objectInstance.GetGeneration()))
     ````
     
-3. This [reference implementation](controllers/sample_controller_rendered_resources_test.go) also covers reading resources from a concatenated YAML file and installing them on the cluster using [Server-side apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/).
-    Parts of this logic could be leveraged to implement your own controller logic. Checkout functions `getResourcesFromLocalPath()`, `ssa()` and `ssaStatus()` for implementation details.
+3. The reference controller implementations listed above use [Server-side apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/) instead of conventional methods to process resources on the target cluster.
+    Parts of this logic could be leveraged to implement your own controller logic. Checkout functions inside these controllers for state management and other implementation details.
 
 ### Local testing
 * Connect to your cluster and ensure `kubectl` is pointing to the desired cluster.

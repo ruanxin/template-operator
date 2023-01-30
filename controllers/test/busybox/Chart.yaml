@@ -8,8 +8,5 @@ keywords:
 - sanity check
 - network
 - connectivity
-maintainers:
-- email: john.felten@gmail.com
-  name: John Felten
-name: busybox
+name: busybox-helm
 version: 0.1.0
