@@ -154,12 +154,12 @@ func (r *SampleHelmReconciler) HandleDeletingState(ctx context.Context, objectIn
 	status := objectInstance.Status
 
 	resources, err := r.render(ctx, objectInstance)
-	if err != nil {
-		logger.Error(err, "error during rendering of resources during uninstallation")
-		r.Event(objectInstance, "Warning", "ResourcesDelete", "rendering resources error")
-		return r.setStatusForObjectInstance(ctx, objectInstance, status.
-			WithState(v1alpha1.StateError).
-			WithInstallConditionStatus(metav1.ConditionFalse, objectInstance.GetGeneration()))
+	// if there is an error during rendering, remove the CR finalizer as it cannot proceed with resources
+	if err != nil && controllerutil.RemoveFinalizer(objectInstance, finalizer) {
+		logger.Error(err, "error during rendering of resources during uninstallation, finalizer will be removed")
+		r.Event(objectInstance, "Warning", "ResourcesDelete",
+			"chart resources not removed")
+		return r.Client.Update(ctx, objectInstance)
 	}
 	r.Event(objectInstance, "Normal", "ResourcesDelete", "deleting resources")
 
