@@ -1,4 +1,4 @@
-###Template-Operator Sample Data###
+### Template-Operator Sample Data
 
 This directory contains sample data for the template-operator.
 The directory is by default embedded in the template-operator docker image, so the operator can access the files placed here when deployed in the cluster.
