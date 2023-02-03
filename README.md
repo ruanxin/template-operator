@@ -271,8 +271,8 @@ _WARNING: This step requires the working OCI Registry from our [Pre-requisites](
     ``` 
 
     The sample module data in this repository includes both a Helm Chart and a YAML manifest in `module-data/helm` and `module-data/yaml` directories, respectively.
-    You reference the Helm Chart directory using `spec.chartPath` attribute of the SampleHelm CR. You reference the YAML manifest directory using `spec.resourceFilePath` attribute of the Sample CR.
-    Sample Custom Resources in the `config/samples` directory are already referencing the mentioned directories.
+    You reference the Helm Chart directory with `spec.chartPath` attribute of the `SampleHelm` CR. You reference the YAML manifest directory with `spec.resourceFilePath` attribute of the `Sample` CR.
+    The example custom resources in the `config/samples` directory are already referencing the mentioned directories.
     Feel free to organize the static data in a different way, the included `module-data` directory serves just as an example.
     You may also decide to not include any static data at all - in that case you have to provide the controller with the Helm/YAML data at runtime using other techniques, for example Kubernetes volume mounting.
 
