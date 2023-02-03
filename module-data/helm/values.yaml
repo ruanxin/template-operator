@@ -1,5 +1,5 @@
 # -- Deployment name
-nameOverride: "default-deployment"
+nameOverride: "helm-redis"
 # -- Replicas
 replicas: 1
 # -- Image

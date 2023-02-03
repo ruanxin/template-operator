@@ -3,6 +3,7 @@ This documentation and template serves as a reference to implement a module (com
 It utilizes the [kubebuilder](https://book.kubebuilder.io/) framework with some modifications to implement Kubernetes APIs for custom resource definitions (CRDs).
 Additionally, it hides Kubernetes boilerplate code to develop fast and efficient control loops in Go.
 
+
 ## Contents
 * [Understanding module development in Kyma](#understanding-module-development-in-kyma)
 * [Implementation](#implementation)
@@ -258,16 +259,22 @@ _WARNING: Do not forget to run `make manifests` after this adjustment for it to 
 
 _WARNING: This step requires the working OCI Registry from our [Pre-requisites](#pre-requisites)_
 
-1. Include the module chart represented by `chartPath` from _step 3_ in [Controller implementation](#steps-controller-implementation) above, in your _Dockerfile_:
+1. Include the static module data in your _Dockerfile_:
     ```dockerfile
     FROM gcr.io/distroless/static:nonroot
     WORKDIR /
-    COPY module-chart/ module-chart/
+    COPY module-data/ module-data/
     COPY --from=builder /workspace/manager .
     USER 65532:65532
     
     ENTRYPOINT ["/manager"]
     ``` 
+
+    The sample module data in this repository includes both a Helm Chart and a YAML manifest in `module-data/helm` and `module-data/yaml` directories, respectively.
+    You reference the Helm Chart directory using `spec.chartPath` attribute of the SampleHelm CR. You reference the YAML manifest directory using `spec.resourceFilePath` attribute of the Sample CR.
+    Sample Custom Resources in the `config/samples` directory are already referencing the mentioned directories.
+    Feel free to organize the static data in a different way, the included `module-data` directory serves just as an example.
+    You may also decide to not include any static data at all - in that case you have to provide the controller with the Helm/YAML data at runtime using other techniques, for example Kubernetes volume mounting.
 
 2. Build and push your module operator binary by adjusting `IMG` if necessary and running the inbuilt kubebuilder commands.
    Assuming your operator image has the following base settings:
