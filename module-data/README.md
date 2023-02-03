@@ -13,7 +13,6 @@ You can install the manifest by creating a `Sample` CustomResource. See a workin
 
 If you want to install your own chart/manifest, you have two options:
 1. Change **this** sample data and build your own custom docker image that you'll then use in deployment: `make docker-build`. Refer to the main README.md file for details.
-2. Deploy the template-operator as it is and reconfigure it's deployment to mount additional files into the operator Pod. You can use Kubernetes volume mount feature for that. Then refer to the mounted folder in the Sample/SampleHelm CustomResource to trigger the installation.
+2. Deploy the template-operator as it is and reconfigure it's deployment to mount additional files into the operator Pod. You can use Kubernetes volume mount feature for that. Then refer to the mounted folder in the `Sample` or `SampleHelm` CustomResource to trigger the installation.
 
-Note: When running the controller locally with `make run`, the controller has access to your local filesystem, so use local paths for `Sample` and `SampleHelm` CustomResources.
-
+Note: When running the controller locally with `make run`, the controller has access to your local filesystem, so use local paths in `Sample` and `SampleHelm` configuration.
