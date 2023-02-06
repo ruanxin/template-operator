@@ -1,6 +1,6 @@
 apiVersion: operator.kyma-project.io/v1alpha1
 kind: Sample
 metadata:
-  name: sample-sample
+  name: sample-yaml
 spec:
-  resourceFilePath: "your/path"
+  resourceFilePath: "./module-data/yaml"

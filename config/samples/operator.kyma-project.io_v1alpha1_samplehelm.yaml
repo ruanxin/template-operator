@@ -7,6 +7,6 @@ metadata:
     app.kubernetes.io/part-of: template-operator
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: template-operator
-  name: samplehelm-sample
+  name: sample-helm
 spec:
-  chartPath: "./module-chart"
+  chartPath: "./module-data/helm"
