@@ -80,8 +80,3 @@ components:
 #    kind: Service
 #    version: v1
 #    name: webhook-service
-
-images:
-- name: controller
-  newName: k3d-registry.localhost:5111/kyma-project.io/template-operator
-  newTag: 1.2.3
