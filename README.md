@@ -35,7 +35,7 @@ Every Kyma Module using an Operator follows 5 basic Principles:
 
 - Declared as available for use in a release channel through the `ModuleTemplate` Custom Resource in the control-plane
 - Declared as desired state within the `Kyma` Custom Resource in runtime or control-plane
-- Installed / managed in the runtime by [Module Manager](https://github.com/kyma-project/module-manager) through a `Manifest` custom resource in the control-plane
+- Installed / managed in the runtime by [Lifecycle Manager](https://github.com/kyma-project/lifecycle-manager) through a `Manifest` custom resource in the control-plane
 - Owns at least 1 Custom Resource Definition that defines the contract towards a Runtime Administrator and configures its behaviour
 - Is operating on at most 1 runtime at every given time
 
@@ -88,7 +88,7 @@ However, we do not opinionate on Permissions of controllers and enforce stricter
 Fundamentally different is also the way that `Providers` and `Composite Resources` work compared to the Kyma ecosystem.
 While Kyma allows any module to bring an individual CustomResource into the cluster for configuration, a `Provider` in Crossplane is located in the control-plane and only directs installation targets.
 We handle this kind of data centrally through acquisition-strategies for credentials and other centrally managed data in the `Kyma` Custom Resource. 
-Thus, it is most fitting, to consider the Kyma eco-system as a heavily opinionated `Composite Resource` from Crossplane, with the `Managed Resource` being tracked with the Module Manager `Manifest`. 
+Thus, it is most fitting, to consider the Kyma eco-system as a heavily opinionated `Composite Resource` from Crossplane, with the `Managed Resource` being tracked with the Lifecycle Manager `Manifest`. 
 
 Compared to Crossplane, we also encourage the creation of own CustomResourceDefinitions in place of the concept of the `Managed Resource`, and in the case of configuration, we are able to synchronize not only a desired state for all modules from the control-plane, but also from the runtime.
 Similarly, we make the runtime module catalog discoverable from inside the runtime with a dedicated synchronization mechanism.
@@ -120,12 +120,14 @@ However, in Kyma we opinionated here, since managed use-cases usually require un
     ```
 * [kyma CLI](https://storage.googleapis.com/kyma-cli-stable/kyma-darwin)
 * A [Helm Chart](https://helm.sh/) to install from your control-loop (if you do not have one ready, feel free to use the stateless redis chart from this sample)
-
+* An OCI Registry to host OCI Image
+  * Follow our [Provision cluster and OCI registry](https://github.com/kyma-project/lifecycle-manager/blob/main/docs/developer/provision-cluster-and-registry.md) guide to create a local registry provided by k3d
+  * Or using [Google Container Registry (GCR)](https://github.com/kyma-project/lifecycle-manager/blob/main/docs/developer/prepare-gcr-registry.md) guide for a remote registry.
 ### Generate kubebuilder operator
 
-1. Initialize `kubebuilder` project. Please make sure domain is set to `kyma-project.io`.
+1. Initialize `kubebuilder` project. Please make sure domain is set to `kyma-project.io`, the following command should execute in `test-operator` folder.
     ```shell
-   kubebuilder init --domain kyma-project.io --repo github.com/kyma-project/test-operator/operator --project-name=test-operator --plugins=go/v4-alpha
+    kubebuilder init --domain kyma-project.io --repo github.com/kyma-project/test-operator --project-name=test-operator --plugins=go/v4-alpha
     ```
 
 2. Create API group version and kind for the intended custom resource(s). Please make sure the `group` is set as `operator`.
@@ -337,10 +339,10 @@ _WARNING: This step requires the working OCI Registry, Cluster and Kyma CLI from
    Now, run the following command to create and push your module operator image to the specified registry:
 
    ```sh
-   kyma alpha create module --version 0.0.1 -w --insecure --registry op-kcp-registry.localhost:8888/unsigned
+   kyma alpha create module --version 0.0.1 --insecure --registry op-kcp-registry.localhost:8888/unsigned
    ```
    
-   _WARNING: For external registries (e.g. Google Container/Artifact Registry), never use insecure. Instead specify credentials. More details can be found in the help documentation of the CLI_
+   _WARNING: For external registries (e.g. Google Container/Artifact Registry), never use insecure. Instead, specify credentials. More details can be found in the help documentation of the CLI_
 
    To make a setup work in single-cluster mode adjust the generated `template.yaml` to install the module in the Control Plane, by assigning the field `.spec.target` to value `control-plane`. This will install all operators and modules in the same cluster.
 
@@ -401,24 +403,11 @@ _WARNING: This step requires the working OCI Registry and Cluster from our [Pre-
 
 Now that everything is prepared in a cluster of your choice, you are free to reference the module within any `Kyma` custom resource in your Control Plane cluster.
 
-Deploy the [Lifecycle Manager](https://github.com/kyma-project/lifecycle-manager/tree/main) & [Module Manager](https://github.com/kyma-project/module-manager/tree/main) to the Control Plane cluster with:
+Deploy the [Lifecycle Manager](https://github.com/kyma-project/lifecycle-manager/tree/main) to the Control Plane cluster with:
 
 ```shell
 kyma alpha deploy
 ```
-
-_WARNING: For single-cluster mode, module manager needs additional privileges to work in the cluster as it usually does not need to access all resource types within the control-plane.
-This can be fixed by editing the necessary ClusterRole with `kubectl edit clusterrole module-manager-manager-role` with the following adjustment:_
-```yaml
-- apiGroups:                                                                                                                                                  
-  - "*"                                                                                                                                                       
-  resources:                                                                                                                                                  
-  - "*"                                                                                                                                                       
-  verbs:                                                                                                                                                      
-  - "*"
-```
-
-_Note that this is very hard to properly protect against privilege escalation in single-cluster mode, which is one of the reasons we heavily discourage it for productive use_
 
 ### Deploying a `ModuleTemplate` into the Control Plane
 
