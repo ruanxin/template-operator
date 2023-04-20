@@ -303,12 +303,6 @@ _WARNING: This step requires the working OCI Registry, Cluster and Kyma CLI from
    * module name is `template`
    * for a k3d registry enable the `insecure` flag (`http` instead of `https` for registry communication)
    * uses Kyma CLI in `$PATH` under `kyma`
-   * a simple `config.yaml` is present for module configuration with the content
-
-     ```yaml
-     # Samples Config
-     configs:
-     ```
    * the default sample under `config/samples/operator_v1alpha1_sample.yaml` has been adjusted to be a valid CR by setting the default generated `Foo` field instead of a TODO.
 
      ```yaml
