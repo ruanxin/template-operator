@@ -161,7 +161,7 @@ func (r *SampleReconciler) HandleErrorState(ctx context.Context, objectInstance 
 	}
 	// set eventual state to Ready - if no errors were found
 	return r.setStatusForObjectInstance(ctx, objectInstance, status.
-		WithState(v1alpha1.StateReady).
+		WithState(r.FinalState).
 		WithInstallConditionStatus(metav1.ConditionTrue, objectInstance.GetGeneration()))
 }
 
