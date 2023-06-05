@@ -121,6 +121,8 @@ spec:
                 - Deleting
                 - Ready
                 - Error
+                - Warning
+                - ""
                 type: string
             required:
             - state
