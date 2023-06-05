@@ -101,7 +101,7 @@ func (r *SampleHelmReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{Requeue: true}, r.HandleDeletingState(ctx, &objectInstance)
 	case v1alpha1.StateError:
 		return ctrl.Result{Requeue: true}, r.HandleErrorState(ctx, &objectInstance)
-	case v1alpha1.StateReady:
+	case v1alpha1.StateReady, v1alpha1.StateWarning:
 		return ctrl.Result{RequeueAfter: requeueInterval}, r.HandleReadyState(ctx, &objectInstance)
 	}
 
