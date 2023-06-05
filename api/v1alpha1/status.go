@@ -19,6 +19,10 @@ const (
 	// StateDeleting signifies Module CR is being deleted. This is the state that is used
 	// when a deletionTimestamp was detected and Finalizers are picked up.
 	StateDeleting State = "Deleting"
+
+	// StateWarning signifies specified resource has been deployed, but cannot be used due to misconfiguration,
+	// usually it means that user interaction is required.
+	StateWarning State = "Warning"
 )
 
 // +k8s:deepcopy-gen=true

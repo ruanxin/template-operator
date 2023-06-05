@@ -20,6 +20,14 @@ configurations:
 resources:
 - ../manager
 
+patches:
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/args/-
+        value: --final-state=Ready
+    target:
+      kind: Deployment
+
 components:
 - ../crd
 - ../rbac
