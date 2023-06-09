@@ -48,6 +48,7 @@ type SampleReconciler struct {
 	*rest.Config
 	// EventRecorder for creating k8s events
 	record.EventRecorder
+	FinalState v1alpha1.State
 }
 
 type ManifestResources struct {
@@ -120,7 +121,7 @@ func (r *SampleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{Requeue: true}, r.HandleDeletingState(ctx, &objectInstance)
 	case v1alpha1.StateError:
 		return ctrl.Result{Requeue: true}, r.HandleErrorState(ctx, &objectInstance)
-	case v1alpha1.StateReady:
+	case v1alpha1.StateReady, v1alpha1.StateWarning:
 		return ctrl.Result{RequeueAfter: requeueInterval}, r.HandleReadyState(ctx, &objectInstance)
 	}
 
@@ -148,7 +149,7 @@ func (r *SampleReconciler) HandleProcessingState(ctx context.Context, objectInst
 	}
 	// set eventual state to Ready - if no errors were found
 	return r.setStatusForObjectInstance(ctx, objectInstance, status.
-		WithState(v1alpha1.StateReady).
+		WithState(r.FinalState).
 		WithInstallConditionStatus(metav1.ConditionTrue, objectInstance.GetGeneration()))
 }
 
@@ -160,7 +161,7 @@ func (r *SampleReconciler) HandleErrorState(ctx context.Context, objectInstance 
 	}
 	// set eventual state to Ready - if no errors were found
 	return r.setStatusForObjectInstance(ctx, objectInstance, status.
-		WithState(v1alpha1.StateReady).
+		WithState(r.FinalState).
 		WithInstallConditionStatus(metav1.ConditionTrue, objectInstance.GetGeneration()))
 }
 

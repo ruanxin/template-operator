@@ -32,6 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	"github.com/kyma-project/template-operator/api/v1alpha1"
 	componentv1alpha1 "github.com/kyma-project/template-operator/api/v1alpha1"
 	operatorkymaprojectiov1alpha1 "github.com/kyma-project/template-operator/api/v1alpha1"
 	"github.com/kyma-project/template-operator/controllers"
@@ -59,6 +60,7 @@ type FlagVar struct {
 	failureMaxDelay      time.Duration
 	rateLimiterFrequency int
 	rateLimiterBurst     int
+	finalState           string
 }
 
 func init() { //nolint:gochecknoinits
@@ -103,6 +105,7 @@ func main() {
 		Client:        mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),
 		EventRecorder: mgr.GetEventRecorderFor(operatorName),
+		FinalState:    operatorkymaprojectiov1alpha1.State(flagVar.finalState),
 	}).SetupWithManager(mgr, ratelimiter); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Sample")
 		os.Exit(1)
@@ -149,5 +152,7 @@ func defineFlagVar() *FlagVar {
 		"Indicates the failure base delay in seconds for rate limiter.")
 	flag.DurationVar(&flagVar.failureMaxDelay, "failure-max-delay", failureMaxDelayDefault,
 		"Indicates the failure max delay in seconds")
+	flag.StringVar(&flagVar.finalState, "final-state", string(v1alpha1.StateReady),
+		"Customize final state, to mimic state behaviour like Ready, Warning")
 	return flagVar
 }

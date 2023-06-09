@@ -110,6 +110,7 @@ var _ = BeforeSuite(func() {
 		Client:        k8sManager.GetClient(),
 		Scheme:        scheme.Scheme,
 		EventRecorder: k8sManager.GetEventRecorderFor("tests"),
+		FinalState:    operatorkymaprojectiov1alpha1.StateReady,
 	}
 
 	reconcilerHelm = &controllers.SampleHelmReconciler{
