@@ -1,3 +1,5 @@
+[![REUSE status](https://api.reuse.software/badge/github.com/kyma-project/template-operator)](https://api.reuse.software/info/github.com/kyma-project/template-operator)
+
 # Template Operator
 This documentation and template serves as a reference to implement a module (component) operator, for integration with the [lifecycle-manager](https://github.com/kyma-project/lifecycle-manager/tree/main/).
 It utilizes the [kubebuilder](https://book.kubebuilder.io/) framework with some modifications to implement Kubernetes APIs for custom resource definitions (CRDs).
