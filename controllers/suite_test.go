@@ -44,13 +44,12 @@ import (
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var (
-	k8sClient      client.Client                     //nolint:gochecknoglobals
-	k8sManager     manager.Manager                   //nolint:gochecknoglobals
-	testEnv        *envtest.Environment              //nolint:gochecknoglobals
-	ctx            context.Context                   //nolint:gochecknoglobals
-	cancel         context.CancelFunc                //nolint:gochecknoglobals
-	reconciler     *controllers.SampleReconciler     //nolint:gochecknoglobals
-	reconcilerHelm *controllers.SampleHelmReconciler //nolint:gochecknoglobals
+	k8sClient  client.Client                 //nolint:gochecknoglobals
+	k8sManager manager.Manager               //nolint:gochecknoglobals
+	testEnv    *envtest.Environment          //nolint:gochecknoglobals
+	ctx        context.Context               //nolint:gochecknoglobals
+	cancel     context.CancelFunc            //nolint:gochecknoglobals
+	reconciler *controllers.SampleReconciler //nolint:gochecknoglobals
 )
 
 const (
@@ -113,16 +112,7 @@ var _ = BeforeSuite(func() {
 		FinalState:    operatorkymaprojectiov1alpha1.StateReady,
 	}
 
-	reconcilerHelm = &controllers.SampleHelmReconciler{
-		Client:        k8sManager.GetClient(),
-		Scheme:        scheme.Scheme,
-		EventRecorder: k8sManager.GetEventRecorderFor("tests"),
-		Config:        k8sManager.GetConfig(),
-	}
-
 	err = reconciler.SetupWithManager(k8sManager, rateLimiter)
-	Expect(err).ToNot(HaveOccurred())
-	err = reconcilerHelm.SetupWithManager(k8sManager, rateLimiter)
 	Expect(err).ToNot(HaveOccurred())
 
 	go func() {

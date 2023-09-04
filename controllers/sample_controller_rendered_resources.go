@@ -62,9 +62,6 @@ type ManifestResources struct {
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch;get;list;watch
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;create;update;patch;delete
 
-// TODO: dynamically create RBACs! Remove line below.
-//+kubebuilder:rbac:groups="*",resources="*",verbs="*"
-
 // SetupWithManager sets up the controller with the Manager.
 func (r *SampleReconciler) SetupWithManager(mgr ctrl.Manager, rateLimiter RateLimiter) error {
 	r.Config = mgr.GetConfig()

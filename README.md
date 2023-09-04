@@ -28,7 +28,7 @@ Before going in-depth, make sure you are familiar with:
 - [Modularization in Kyma](https://github.com/kyma-project/community/tree/main/concepts/modularization)
 - [Operator Pattern in Kubernetes](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)
 
-This Guide serves as comprehensive Step-By-Step tutorial on how to properly create a module from scratch by using an operator that is installing a Helm Chart. 
+This Guide serves as comprehensive Step-By-Step tutorial on how to properly create a module from scratch by using an operator that is installing k8s yaml resources. 
 Note that while other approaches are encouraged, there is no dedicated guide available yet and these will follow with sufficient requests and adoption of Kyma modularization.
 
 Every Kyma Module using an Operator follows 5 basic Principles:
@@ -119,7 +119,6 @@ However, in Kyma we opinionated here, since managed use-cases usually require un
     chmod +x kubebuilder && mv kubebuilder /usr/local/bin/
     ```
 * [kyma CLI](https://storage.googleapis.com/kyma-cli-stable/kyma-darwin)
-* A [Helm Chart](https://helm.sh/) to install from your control-loop (if you do not have one ready, feel free to use the stateless redis chart from this sample)
 * An OCI Registry to host OCI Image
   * Follow our [Provision cluster and OCI registry](https://github.com/kyma-project/lifecycle-manager/blob/main/docs/developer/provision-cluster-and-registry.md) guide to create a local registry provided by k3d
   * Or using [Google Container Registry (GCR)](https://github.com/kyma-project/lifecycle-manager/blob/main/docs/developer/prepare-gcr-registry.md) guide for a remote registry.
@@ -168,7 +167,7 @@ Further reading: [Kustomize built-in commonLabels](https://github.com/kubernetes
     Include the `State` values in your `Status` sub-resource, either through inline reference or direct inclusion. These values have literal meaning behind them, so use them appropriately.
 
 2. Optionally, you can add additional fields to your `Status` sub-resource. 
-3. For instance, `Conditions` are added to `SampleCR` in the [API definition](api/v1alpha1/sample_types.go) and `SampleHelmCR` in the [API definition](api/v1alpha1/samplehelm_types.go).
+3. For instance, `Conditions` are added to `SampleCR` in the [API definition](api/v1alpha1/sample_types.go).
 This also includes the required `State` values, using an inline reference.
 
     <details>
@@ -205,9 +204,9 @@ _Warning_: This sample implementation is only for reference. You could copy part
 
 1. Implement `State` handling to represent the corresponding state of the reconciled resource, by following [kubebuilder](https://book.kubebuilder.io/) guidelines to implement controllers.
 
-2. You could refer either to `SampleCR` [controller implementation](controllers/sample_controller_rendered_resources.go) or `SampleHelmCR` [controller implementation](controllers/sample_local_helm_controller.go) for setting appropriate `State` and `Conditions` values to your `Status` sub-resource.
+2. You could refer either to `SampleCR` [controller implementation](controllers/sample_controller_rendered_resources.go) for setting appropriate `State` and `Conditions` values to your `Status` sub-resource.
 
-    `SampleCR` is reconciled to install / uninstall a list of rendered resources from a YAML file on the file system. Whereas `SampleHelmCR` is reconciled to install / uninstall (using SSA, see next point) rendered resources from a local Helm Chart. The latter uses the Helm library purely to render resources.
+    `SampleCR` is reconciled to install / uninstall a list of rendered resources from a YAML file on the file system.
     
     ````go   
     r.setStatusForObjectInstance(ctx, objectInstance, status.
@@ -272,11 +271,11 @@ _WARNING: This step requires the working OCI Registry from our [Pre-requisites](
     ENTRYPOINT ["/manager"]
     ``` 
 
-    The sample module data in this repository includes both a Helm Chart and a YAML manifest in `module-data/helm` and `module-data/yaml` directories, respectively.
-    You reference the Helm Chart directory with `spec.chartPath` attribute of the `SampleHelm` CR. You reference the YAML manifest directory with `spec.resourceFilePath` attribute of the `Sample` CR.
+    The sample module data in this repository includes a YAML manifest in `module-data/yaml` directories.
+    You reference the YAML manifest directory with `spec.resourceFilePath` attribute of the `Sample` CR.
     The example custom resources in the `config/samples` directory are already referencing the mentioned directories.
     Feel free to organize the static data in a different way, the included `module-data` directory serves just as an example.
-    You may also decide to not include any static data at all - in that case you have to provide the controller with the Helm/YAML data at runtime using other techniques, for example Kubernetes volume mounting.
+    You may also decide to not include any static data at all - in that case you have to provide the controller with the YAML data at runtime using other techniques, for example Kubernetes volume mounting.
 
 2. Build and push your module operator binary by adjusting `IMG` if necessary and running the inbuilt kubebuilder commands.
    Assuming your operator image has the following base settings:
@@ -362,18 +361,9 @@ _WARNING: This step requires the working OCI Registry, Cluster and Kyma CLI from
         type: ociRegistry
       resources:
       - access:
-          filename: sha256:fafc3be538f68a786f3b8ef39bd741805314253f81cf4a5880395dcecf599ef5
-          mediaType: application/gzip
-          type: localFilesystemBlob
-        name: sample-operator
-        relation: local
-        type: helm-chart
-        version: 0.0.1
-      - access:
-          filename: sha256:db86408caca4c94250d8291aa79655b84146f9cc45e0da49f05a52b3722d74a0
-          mediaType: application/octet-stream
-          type: localFilesystemBlob
-        name: config
+          digest: sha256:5982e2d0f7c49a8af684c4aa5b9713d639601e14dcce536e270848962892661b
+          type: localOciBlob
+        name: raw-manifest
         relation: local
         type: yaml
         version: 0.0.1

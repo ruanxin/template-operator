@@ -110,15 +110,6 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Sample")
 		os.Exit(1)
 	}
-	if err = (&controllers.SampleHelmReconciler{
-		Client:        mgr.GetClient(),
-		Scheme:        mgr.GetScheme(),
-		EventRecorder: mgr.GetEventRecorderFor(operatorName),
-		Config:        mgr.GetConfig(),
-	}).SetupWithManager(mgr, ratelimiter); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "SampleHelm")
-		os.Exit(1)
-	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
