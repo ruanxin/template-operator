@@ -1,0 +1,6 @@
+linters:
+  enable-all: false
+run:
+  timeout: 15m
+  skip-files:
+    - zz_generated.deepcopy.go
