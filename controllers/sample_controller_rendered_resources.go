@@ -61,6 +61,8 @@ type ManifestResources struct {
 //+kubebuilder:rbac:groups=operator.kyma-project.io,resources=samples/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch;get;list;watch
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=configmaps,verbs=create;patch;delete
+//+kubebuilder:rbac:groups="apps",resources=deployments,verbs=create;patch;delete
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *SampleReconciler) SetupWithManager(mgr ctrl.Manager, rateLimiter RateLimiter) error {

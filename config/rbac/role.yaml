@@ -7,6 +7,14 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - configmaps
+  verbs:
+  - create
+  - delete
+  - patch
+- apiGroups:
+  - ""
+  resources:
   - events
   verbs:
   - create
@@ -26,6 +34,14 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - patch
 - apiGroups:
   - operator.kyma-project.io
   resources:
