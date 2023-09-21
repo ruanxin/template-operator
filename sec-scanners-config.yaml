@@ -1,4 +1,6 @@
 module-name: template-operator
+rc-tag: 0.5.0.           
+dev-branch: main
 whitesource:
   language: golang-mod
   subprojects: false
