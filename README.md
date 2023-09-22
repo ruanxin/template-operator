@@ -122,8 +122,8 @@ However, in Kyma we opinionated here, since managed use-cases usually require un
     ```
 * [kyma CLI](https://storage.googleapis.com/kyma-cli-stable/kyma-darwin)
 * An OCI Registry to host OCI Image
-  * Follow our [Provision cluster and OCI registry](https://github.com/kyma-project/lifecycle-manager/blob/main/docs/developer/provision-cluster-and-registry.md) guide to create a local registry provided by k3d
-  * Or using [Google Container Registry (GCR)](https://github.com/kyma-project/lifecycle-manager/blob/main/docs/developer/prepare-gcr-registry.md) guide for a remote registry.
+  * Follow our [Provision cluster and OCI registry](https://github.com/kyma-project/lifecycle-manager/blob/main/docs/developer-tutorials/provision-cluster-and-registry.md) guide to create a local registry provided by k3d
+  * Or using [Google Container Registry (GCR)](https://github.com/kyma-project/lifecycle-manager/blob/main/docs/developer-tutorials/prepare-gcr-registry.md) guide for a remote registry.
 ### Generate kubebuilder operator
 
 1. Initialize `kubebuilder` project. Please make sure domain is set to `kyma-project.io`, the following command should execute in `test-operator` folder.
@@ -147,7 +147,7 @@ If the module operator will be deployed under same namespace with other operator
 
 2. Include all resources (e.g: [manager.yaml](config/manager/manager.yaml)) which contain label selectors by using `commonLabels`.
 
-Further reading: [Kustomize built-in commonLabels](https://github.com/kubernetes-sigs/kustomize/blob/master/api/konfig/builtinpluginconsts/commonlabels.go)
+Further reading: [Kustomize built-in commonLabels](https://github.com/kubernetes-sigs/kustomize/blob/master/api/internal/konfig/builtinpluginconsts/commonlabels.go)
 
 #### Steps API definition
 
@@ -245,7 +245,7 @@ This feature is supported by [kubebuilder grafana plugin](https://book.kubebuild
 
 ### RBAC
 Make sure you have appropriate authorizations assigned to you controller binary, before you run it inside a cluster (not locally with `make run`).
-The Sample CR [controller implementation](controllers/sample_controller.go) includes rbac generation (via kubebuilder) for all resources across all API groups.
+The Sample CR [controller implementation](controllers/sample_controller_rendered_resources.go) includes rbac generation (via kubebuilder) for all resources across all API groups.
 This should be adjusted according to the chart manifest resources and reconciliation types.
 
 Towards the earlier stages of your operator development RBACs could simply accommodate all resource types and adjusted later, as per your requirements.
