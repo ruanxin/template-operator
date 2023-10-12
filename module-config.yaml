@@ -1,5 +1,5 @@
 name: kyma-project.io/module/template-operator
-channel: fast
+channel: regular
 version: v1.0.0
 manifest: template-operator.yaml
 security: sec-scanners-config.yaml
