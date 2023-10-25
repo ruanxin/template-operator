@@ -296,24 +296,15 @@ This will build the controller image and then push it as the image defined in `I
 
 _WARNING: This step requires the working OCI Registry, Cluster and Kyma CLI from our [Pre-requisites](#pre-requisites)_
 
-1. The module operator manifests from the `default` kustomization (not the controller image) will now be bundled and pushed.
+1. **Prerequisites**
+   
+   The module operator manifests from the `default` kustomization (not the controller image) will now be bundled and pushed.
    Assuming the settings from [Prepare and build module operator image](#prepare-and-build-module-operator-image) for single-cluster mode, and assuming the following module settings:
    * hosted at `op-kcp-registry.localhost:8888/unsigned`
-   * generated for channel `regular` (or any other name follow the channel naming rules)
-   * module has version `0.0.1`
-   * module name is `template`
    * for a k3d registry enable the `insecure` flag (`http` instead of `https` for registry communication)
    * uses Kyma CLI in `$PATH` under `kyma`
-   * the default sample under `config/samples/operator_v1alpha1_sample.yaml` has been adjusted to be a valid CR by setting the default generated `Foo` field instead of a TODO.
+   * the default sample under `config/samples/operator.kyma-project.io_v1alpha1_sample.yaml` has been adjusted to be a valid CR.
 
-     ```yaml
-     apiVersion: operator.kyma-project.io/v1alpha1
-     kind: Sample
-     metadata:
-       name: sample-sample
-     spec:
-       foo: bar
-     ```
      _WARNING: The settings above reflect your default configuration for a module. If you want to change this you will have to manually adjust it to a different configuration. 
      You can also define multiple files in `config/samples`, however you will need to then specify the correct file during bundling._
    * The `.gitignore` has been adjusted and following ignores were added
@@ -329,10 +320,56 @@ _WARNING: This step requires the working OCI Registry, Cluster and Kyma CLI from
        template.yaml
      ```
 
-   Now, run the following command to create and push your module operator image to the specified registry:
+2. **Module Configuration**
+   
+   To configure the module, the file `module-config.yaml` must be adjusted. This file is located at the root of the repository.
+ 
+   The following fields are available for the configuration of the module:
+   - `name`: (Required) The name of the module.
+   - `version`: (Required) The version of the module.
+   - `channel`: (Required) The channel that should be used in the ModuleTemplate. Must be a valid Kyma state.
+   - `manifest`: (Required) The relative path to the manifests file.
+   - `defaultCR`: (Optional) The relative path to a YAML file containing the default Custom Resource for the module.
+   - `resourceName`: (Optional) The name for the ModuleTemplate that will be created.
+   - `namespace`: (Optional) The namespace where the ModuleTemplate will be deployed.
+   - `security`: (Optional) The name of the security scanners configuration file.
+   - `internal`: (Optional) Determines whether the ModuleTemplate should have the internal flag or not. Type is bool.
+   - `beta`: (Optional) Determines whether the ModuleTemplate should have the beta flag or not. Type is bool.
+   - `labels`: (Optional) Additional labels for the ModuleTemplate.
+   - `annotations`: (Optional) Additional annotations for the ModuleTemplate.
+   - `customStateCheck`: (Optional) Specifies custom state checks for the module.
+
+   Here is an example configuration:
+   ```yaml
+   name: kyma-project.io/module/template-operator
+   version: v1.0.0
+   channel: regular
+   manifest: template-operator.yaml
+   defaultCR: ./config/samples/operator.kyma-project.io_v1alpha1_sample.yaml
+   resourceName: example-resource
+   namespace: kcp-system
+   security: sec-scanners-config.yaml
+   internal: false
+   beta: false
+   labels:
+     - operator.kyma-project.io/example-label: template-operator
+   annotations:
+     - operator.kyma-project.io/doc-url: https://kyma-project.io
+   customStateCheck:
+     - jsonPath: .status.state
+       value: green
+       mappedState: Ready
+     - jsonPath: .status.state
+       value: red
+       mappedState: Error
+   ```
+   
+3. **Module Build and Push**
+   
+   Now, run the following command to create the module configured in `module-config.yaml` and push your module operator image to the specified registry:
 
    ```sh
-   kyma alpha create module --version 0.0.1 --insecure --registry op-kcp-registry.localhost:8888/unsigned
+   kyma alpha create module --insecure --registry op-kcp-registry.localhost:8888/unsigned --module-config-file module-config.yaml 
    ```
    
    _WARNING: For external registries (e.g. Google Container/Artifact Registry), never use insecure. Instead, specify credentials. More details can be found in the help documentation of the CLI_
@@ -347,7 +384,19 @@ _WARNING: This step requires the working OCI Registry, Cluster and Kyma CLI from
      target: control-plane
    ```
 
-2. Verify that the module creation succeeded and observe the `mod` folder. It will contain a `component-descriptor.yaml` with a definition of local layers.
+   **[DEPRECATED] Legacy Module Build and Push**
+
+   To create and push a module without the configuration file, the `--kubebuilder-project` flag must be set.
+   The name and version of the module must than also be provided to Kyma CLI tool like in the following command:
+
+   ```sh
+   kyma alpha create module --name kyma-project.io/module/template-operator --version v1.0.0 --insecure --registry op-kcp-registry.localhost:8888/unsigned --kubebuilder-project 
+   ```
+   _NOTE_: The legacy method does not support newer features like security scanners.
+
+4. **Verification**
+   
+   Verify that the module creation succeeded and observe the `mod` folder. It will contain a `component-descriptor.yaml` with a definition of local layers.
     
     <details>
         <summary>Sample</summary>    
