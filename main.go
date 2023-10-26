@@ -34,7 +34,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/kyma-project/template-operator/api/v1alpha1"
-	componentv1alpha1 "github.com/kyma-project/template-operator/api/v1alpha1"
 	operatorkymaprojectiov1alpha1 "github.com/kyma-project/template-operator/api/v1alpha1"
 	"github.com/kyma-project/template-operator/controllers"
 	//+kubebuilder:scaffold:imports
@@ -66,9 +65,8 @@ type FlagVar struct {
 
 func init() { //nolint:gochecknoinits
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
-	utilruntime.Must(componentv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(operatorkymaprojectiov1alpha1.AddToScheme(scheme))
+	utilruntime.Must(controllers.AddToScheme(scheme))
+	utilruntime.Must(controllers.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
