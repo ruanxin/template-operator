@@ -34,7 +34,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/kyma-project/template-operator/api/v1alpha1"
-	operatorkymaprojectiov1alpha1 "github.com/kyma-project/template-operator/api/v1alpha1"
 	"github.com/kyma-project/template-operator/controllers"
 	//+kubebuilder:scaffold:imports
 )
@@ -66,7 +65,6 @@ type FlagVar struct {
 func init() { //nolint:gochecknoinits
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(controllers.AddToScheme(scheme))
-	utilruntime.Must(controllers.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -78,7 +76,7 @@ func main() {
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
-	ratelimiter := controllers.RateLimiter{
+	rateLimiter := controllers.RateLimiter{
 		Burst:           flagVar.rateLimiterBurst,
 		Frequency:       flagVar.rateLimiterFrequency,
 		BaseDelay:       flagVar.failureBaseDelay,
@@ -107,8 +105,8 @@ func main() {
 		Client:        mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),
 		EventRecorder: mgr.GetEventRecorderFor(operatorName),
-		FinalState:    operatorkymaprojectiov1alpha1.State(flagVar.finalState),
-	}).SetupWithManager(mgr, ratelimiter); err != nil {
+		FinalState:    v1alpha1.State(flagVar.finalState),
+	}).SetupWithManager(mgr, rateLimiter); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Sample")
 		os.Exit(1)
 	}
