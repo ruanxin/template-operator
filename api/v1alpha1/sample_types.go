@@ -14,14 +14,28 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package v1alpha1 contains API Schema definitions for the component v1alpha1 API group
+// +kubebuilder:object:generate=true
+// +groupName=operator.kyma-project.io
 package v1alpha1
 
 import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
+const (
+	SampleKind Kind = "Sample"
+	Version    Kind = "v1alpha1"
+)
+
+type Kind string
+
 var (
+	// GroupVersion is group version used to register these objects.
+	GroupVersion = schema.GroupVersion{Group: "operator.kyma-project.io", Version: "v1alpha1"}
+
 	ConditionTypeInstallation = "Installation"
 	ConditionReasonReady      = "Ready"
 )
@@ -32,8 +46,6 @@ type SampleStatus struct {
 	// Conditions contain a set of conditionals to determine the State of Status.
 	// If all Conditions are met, State is expected to be in StateReady.
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
-
-	// add other fields to status subresource here
 }
 
 func (s *SampleStatus) WithState(state State) *SampleStatus {
@@ -88,8 +100,4 @@ type SampleList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Sample `json:"items"`
-}
-
-func init() { //nolint:gochecknoinits
-	SchemeBuilder.Register(&Sample{}, &SampleList{})
 }

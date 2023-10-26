@@ -22,6 +22,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sigs.k8s.io/controller-runtime/pkg/scheme"
 
 	"github.com/go-logr/logr"
 	errors2 "k8s.io/apimachinery/pkg/api/errors"
@@ -54,6 +55,18 @@ type SampleReconciler struct {
 type ManifestResources struct {
 	Items []*unstructured.Unstructured
 	Blobs [][]byte
+}
+
+var (
+	// SchemeBuilder is used to add go types to the GroupVersionKind scheme.
+	SchemeBuilder = &scheme.Builder{GroupVersion: v1alpha1.GroupVersion}
+
+	// AddToScheme adds the types in this group-version to the given scheme.
+	AddToScheme = SchemeBuilder.AddToScheme
+)
+
+func init() { //nolint:gochecknoinits
+	SchemeBuilder.Register(&v1alpha1.Sample{}, &v1alpha1.SampleList{})
 }
 
 //+kubebuilder:rbac:groups=operator.kyma-project.io,resources=samples,verbs=get;list;watch;create;update;patch;delete
