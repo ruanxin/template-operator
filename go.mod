@@ -2,7 +2,7 @@ module github.com/kyma-project/template-operator
 
 go 1.21
 
-replace github.com/kyma-project/template-operator/api => ./api
+replace github.com/kyma-project/template-operator/api => github.com/lindnerby/template-operator/api v0.0.0-20231026095642-c076d664fe87
 
 require (
 	github.com/go-logr/logr v1.2.4

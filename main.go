@@ -21,6 +21,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-project/template-operator/api/v1alpha1"
+	"github.com/kyma-project/template-operator/controllers"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -32,10 +34,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-
-	"github.com/kyma-project/template-operator/api/v1alpha1"
-	operatorkymaprojectiov1alpha1 "github.com/kyma-project/template-operator/api/v1alpha1"
-	"github.com/kyma-project/template-operator/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -107,7 +105,7 @@ func main() {
 		Client:        mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),
 		EventRecorder: mgr.GetEventRecorderFor(operatorName),
-		FinalState:    operatorkymaprojectiov1alpha1.State(flagVar.finalState),
+		FinalState:    v1alpha1.State(flagVar.finalState),
 	}).SetupWithManager(mgr, ratelimiter); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Sample")
 		os.Exit(1)
