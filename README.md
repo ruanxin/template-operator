@@ -345,23 +345,6 @@ _WARNING: This step requires the working OCI Registry, Cluster and Kyma CLI from
    version: v1.0.0
    channel: regular
    manifest: template-operator.yaml
-   defaultCR: ./config/samples/operator.kyma-project.io_v1alpha1_sample.yaml
-   resourceName: example-resource
-   namespace: kcp-system
-   security: sec-scanners-config.yaml
-   internal: false
-   beta: false
-   labels:
-     - operator.kyma-project.io/example-label: template-operator
-   annotations:
-     - operator.kyma-project.io/doc-url: https://kyma-project.io
-   customStateCheck:
-     - jsonPath: .status.state
-       value: green
-       mappedState: Ready
-     - jsonPath: .status.state
-       value: red
-       mappedState: Error
    ```
    
 3. **Module Build and Push**
@@ -383,16 +366,6 @@ _WARNING: This step requires the working OCI Registry, Cluster and Kyma CLI from
    spec:
      target: control-plane
    ```
-
-   **[DEPRECATED] Legacy Module Build and Push**
-
-   To create and push a module without the configuration file, the `--kubebuilder-project` flag must be set.
-   The name and version of the module must than also be provided to Kyma CLI tool like in the following command:
-
-   ```sh
-   kyma alpha create module --name kyma-project.io/module/template-operator --version v1.0.0 --insecure --registry op-kcp-registry.localhost:8888/unsigned --kubebuilder-project 
-   ```
-   _NOTE_: The legacy method does not support newer features like security scanners.
 
 4. **Verification**
    
