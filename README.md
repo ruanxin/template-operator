@@ -298,8 +298,12 @@ _WARNING: This step requires the working OCI Registry, Cluster and Kyma CLI from
 
 1. **Prerequisites**
    
-   The module operator manifests from the `default` kustomization (not the controller image) will now be bundled and pushed.
-   Assuming the settings from [Prepare and build module operator image](#prepare-and-build-module-operator-image) for single-cluster mode, and assuming the following module settings:
+   Generate the CRDs for the module from the `default` kustomization into a manifest file using the following command:
+   ```shell
+   make build-manifests
+   ```
+   
+   Furthermore, assuming the settings from [Prepare and build module operator image](#prepare-and-build-module-operator-image) for single-cluster mode, and assuming the following module settings:
    * hosted at `op-kcp-registry.localhost:8888/unsigned`
    * for a k3d registry enable the `insecure` flag (`http` instead of `https` for registry communication)
    * uses Kyma CLI in `$PATH` under `kyma`
@@ -328,7 +332,7 @@ _WARNING: This step requires the working OCI Registry, Cluster and Kyma CLI from
    - `name`: (Required) The name of the module.
    - `version`: (Required) The version of the module.
    - `channel`: (Required) The channel that should be used in the ModuleTemplate. Must be a valid Kyma state.
-   - `manifest`: (Required) The relative path to the manifests file.
+   - `manifest`: (Required) The relative path to the manifest file (generated in the prerequisites step).
    - `defaultCR`: (Optional) The relative path to a YAML file containing the default Custom Resource for the module.
    - `resourceName`: (Optional) The name for the ModuleTemplate that will be created.
    - `namespace`: (Optional) The namespace where the ModuleTemplate will be deployed.
