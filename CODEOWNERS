@@ -37,3 +37,4 @@
 # https://help.github.com/articles/about-codeowners/
 # https://github.com/blog/2392-introducing-code-owners/
 * @kyma-project/jellyfish
+*.md @kyma-project/technical-writers
