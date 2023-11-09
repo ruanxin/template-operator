@@ -433,7 +433,7 @@ kyma alpha deploy
 Now run the command for creating the `ModuleTemplate` in the cluster.
 After this the module will be available for consumption based on the module name configured with the label `operator.kyma-project.io/module-name` on the `ModuleTemplate`.
 
-_WARNING: Depending on your setup against either a k3d cluster/registry, you will need to run the script in `hack/local-template.sh` before pushing the ModuleTemplate to have proper registry setup.
+_WARNING: Depending on your setup against either a k3d cluster/registry, you will need to run the script `/scripts/patch_local_template.sh` before pushing the ModuleTemplate to have proper registry setup.
 (This is necessary for k3d clusters due to port-mapping issues in the cluster that the operators cannot reuse, please take a look at the [relevant issue for more details](https://github.com/kyma-project/module-manager/issues/136#issuecomment-1279542587))_
 
 ```sh
