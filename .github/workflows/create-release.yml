@@ -9,56 +9,51 @@ on:
         required: true
 
 jobs:
-  verify-head-status:
-    name: Verify head
+  validate-head-status:
+#    name: Validate HEAD status
     runs-on: ubuntu-latest
-
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./scripts
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Validate release tag
+        run: ./validate/release_tag.sh ${{ github.event.inputs.name }}
+      - name: Validate image
+        run: ./validate/image.sh ${{ github.ref_name }}
+      - name: Validate pipeline status
+        run: ./validate/pipeline.sh ${{ github.ref_name }}
 
-      - name: Check tag
-        run: ./scripts/check_release_tag.sh ${{ github.event.inputs.name }}
-
-      - name: Check image
-        run: ./scripts/check_image.sh ${{ github.ref_name }}
-
-      - name: Verify
-        run: ./scripts/verify_status.sh ${{ github.ref_name }}
-
-#  create-draft:
-#    name: Create draft release
-#    needs: verify-head-status
-#    runs-on: ubuntu-latest
-#
-#    steps:
-#      - name: Checkout code
-#        uses: actions/checkout@v4
-#        with:
-#          fetch-depth: 0
-#
-#      - name: Create changelog
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        run: ./scripts/create_changelog.sh ${{ github.event.inputs.name }}
-#
-#      - name: Create draft release
-#        id: create-draft
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        run: |
-#          RELEASE_ID=$(./scripts/create_draft_release.sh ${{ github.event.inputs.name }})
-#          echo "release_id=$RELEASE_ID" >> $GITHUB_OUTPUT
-#
-#      - name: Create lightweight tag
-#        run: |
-#          git tag ${{ github.event.inputs.name }}
-#          git push origin ${{ github.event.inputs.name }}
-#
-#    outputs:
-#      release_id: ${{ steps.create-draft.outputs.release_id }}
+  create-draft:
+    name: Create draft release
+    needs: verify-head-status
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Create changelog
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./scripts/create_changelog.sh ${{ github.event.inputs.name }}
+      - name: Create draft release
+        id: create-draft
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASE_ID=$(./scripts/create_draft_release.sh ${{ github.event.inputs.name }})
+          echo "release_id=$RELEASE_ID" >> $GITHUB_OUTPUT
+      - name: Create lightweight tag
+        run: |
+          git tag ${{ github.event.inputs.name }}
+          git push origin ${{ github.event.inputs.name }}
+    outputs:
+      release_id: ${{ steps.create-draft.outputs.release_id }}
 #
 #  publish-release:
 #    name: Publish release
