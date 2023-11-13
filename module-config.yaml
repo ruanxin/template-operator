@@ -3,6 +3,6 @@ channel: regular
 version: v1.0.0
 manifest: template-operator.yaml
 security: sec-scanners-config.yaml
-defaultCR: ./config/samples/operator.kyma-project.io_v1alpha1_sample.yaml
+defaultCR: ./config/samples/default-sample-cr.yaml
 annotations:
   operator.kyma-project.io/doc-url: https://kyma-project.io
