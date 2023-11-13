@@ -19,7 +19,6 @@ then
 fi
 
 echo "## What has changed" >> ${CHANGELOG_FILE}
-
 git log "${PREVIOUS_RELEASE}"..HEAD --pretty=tformat:"%h" --reverse | while read -r commit
 do
     COMMIT_AUTHOR=$(curl -H "${GITHUB_AUTH_HEADER}" -sS "${GITHUB_URL}/commits/${commit}" | jq -r '.author.login')
