@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 
-REF_NAME="${1:-"main"}"
+set -ue
+source ../../.version
+
+DESIRED_VERSION=$1
+if [[ "$DESIRED_VERSION" != "$MODULE_VERSION" ]]; then
+  echo "Versions don't match! Expected ${MODULE_VERSION} but got $DESIRED_VERSION."
+  echo "Please update .version file or change desired version!"
+  exit 1
+fi
+echo "Versions match."
+
+REF_NAME="${2:-"main"}"
 SHORT_EXPECTED_SHA=$(git rev-parse --short=8 "${REF_NAME}~")
 DATE="v$(git show "${SHORT_EXPECTED_SHA}" --date=format:'%Y%m%d' --format=%ad -q)"
 EXPECTED_VERSION="${DATE}-${SHORT_EXPECTED_SHA}"

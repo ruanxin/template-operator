@@ -10,27 +10,25 @@ on:
 
 jobs:
   validate-head-status:
-#    name: Validate HEAD status
+    name: Validate HEAD
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash
-        working-directory: ./scripts
+        working-directory: ./scripts/release/
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Validate new release version
-        run: ./validate/release_version.sh ${{ github.event.inputs.name }}
-      - name: Validate image tag
-        run: ./validate/image_version.sh ${{ github.ref_name }}
+      - name: Validate set versions
+        run: ./validate_versions.sh ${{ github.event.inputs.name }} ${{ github.ref_name }}
       - name: Validate pipeline status
-        run: ./validate/pipeline_status.sh ${{ github.ref_name }}
+        run: ./validate_pipeline_status.sh ${{ github.ref_name }}
 
-#  create-draft:
-#    name: Create draft release
-#    needs: verify-head-status
+#  draft-release:
+#    name: Draft release
+#    needs: validate-head-status
 #    runs-on: ubuntu-latest
 #    steps:
 #      - name: Checkout code
@@ -40,13 +38,13 @@ jobs:
 #      - name: Create changelog
 #        env:
 #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        run: ./scripts/create_changelog.sh ${{ github.event.inputs.name }}
-#      - name: Create draft release
-#        id: create-draft
+#        run: ./scripts/release/create_changelog.sh ${{ github.event.inputs.name }}
+#      - name: Draft release
+#        id: draft-release
 #        env:
 #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #        run: |
-#          RELEASE_ID=$(./scripts/create_draft_release.sh ${{ github.event.inputs.name }})
+#          RELEASE_ID=$(./scripts/release/draft_release.sh ${{ github.event.inputs.name }})
 #          echo "release_id=$RELEASE_ID" >> $GITHUB_OUTPUT
 #      - name: Create lightweight tag
 #        run: |
@@ -57,7 +55,7 @@ jobs:
 #
 #  publish-release:
 #    name: Publish release
-#    needs: [verify-head-status, create-draft]
+#    needs: [verify-head-status, draft-release]
 #    runs-on: ubuntu-latest
 #
 #    steps:
@@ -69,4 +67,4 @@ jobs:
 #      - name: Publish release
 #        env:
 #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        run: ./scripts/publish_release.sh ${{ needs.create-draft.outputs.release_id }}
+#        run: ./scripts/release/publish_release.sh ${{ needs.draft-release.outputs.release_id }}

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-set -o nounset  # treat unset variables as an error and exit immediately.
-set -o errexit  # exit immediately when a command fails.
-set -E          # needs to be set if we want the ERR trap
-set -o pipefail # prevents errors in a pipeline from being masked
+set -o nounset
+set -o errexit
+set -E
+set -o pipefail
 
-RELEASE_TAG=$1
+RELEASE_VERSION=$1
 PREVIOUS_RELEASE=$2
 
 REPOSITORY=${REPOSITORY:-kyma-project/template-operator}
@@ -48,6 +48,6 @@ then
   done <${NEW_CONTRIB}
 fi
 
-echo -e "\n**Full changelog**: https://github.com/$REPOSITORY/compare/${PREVIOUS_RELEASE}...${RELEASE_TAG}" >> ${CHANGELOG_FILE}
+echo -e "\n**Full changelog**: https://github.com/$REPOSITORY/compare/${PREVIOUS_RELEASE}...${RELEASE_VERSION}" >> ${CHANGELOG_FILE}
 
 rm ${NEW_CONTRIB} || echo "cleaned up"
