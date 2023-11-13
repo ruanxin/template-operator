@@ -7,6 +7,7 @@ STATUS=$(curl -L -H -s "Accept: application/vnd.github+json" -H "X-GitHub-Api-Ve
 if [[ "$STATUS" == *"success"* ]]; then
   echo "All recent jobs succeeded, post-pipelines are green."
 else
-  echo "Latest post-pipelines are failing or pending! Please check."
+  echo "Latest post-pipelines are failing or pending! Reason:"
+  echo "$STATUS"
   exit 1
 fi

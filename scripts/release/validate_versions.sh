@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -ue
-source ../../.version
+source .version
 
 DESIRED_VERSION=$1
 if [[ "$DESIRED_VERSION" != "$MODULE_VERSION" ]]; then
