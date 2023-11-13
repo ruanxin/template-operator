@@ -65,3 +65,5 @@ UPLOAD_URL="https://uploads.github.com/repos/kyma-project/template-operator/rele
 uploadFile "template-operator.yaml" "${UPLOAD_URL}?name=template-operator.yaml"
 uploadFile "moduletemplate.yaml" "${UPLOAD_URL}?name=moduletemplate.yaml"
 uploadFile "config/samples/default-sample-cr.yaml" "${UPLOAD_URL}?name=default-sample-cr.yaml"
+uploadFile "module-config.yaml" "${UPLOAD_URL}?name=module-config.yaml"
+
