@@ -4,9 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       name:
-        description: 'Release name'
+        description: "Release name"
         default: ""
         required: true
+      since:
+        description: "Changelog since"
+        default: ""
+        required: false
 
 jobs:
   validate-head-status:
@@ -38,7 +42,7 @@ jobs:
       - name: Create changelog
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./scripts/release/create_changelog.sh ${{ github.event.inputs.name }}
+        run: ./scripts/release/create_changelog.sh ${{ github.event.inputs.name }} ${{ github.event.inputs.since }}
       - name: Draft release
         id: draft-release
         env:
@@ -55,7 +59,7 @@ jobs:
 
   publish-release:
     name: Publish release
-    needs: [verify-head-status, draft-release]
+    needs: [validate-head-status, draft-release]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

@@ -7,16 +7,15 @@ set -o pipefail
 
 RELEASE_VERSION=$1
 PREVIOUS_RELEASE=$2
+if [ "${PREVIOUS_RELEASE}"  == "" ]
+then
+  PREVIOUS_RELEASE=$(git describe --tags --abbrev=0)
+fi
 
 REPOSITORY=${REPOSITORY:-kyma-project/template-operator}
 GITHUB_URL=https://api.github.com/repos/${REPOSITORY}
 GITHUB_AUTH_HEADER="Authorization: token ${GITHUB_TOKEN}"
 CHANGELOG_FILE="CHANGELOG.md"
-
-if [ "${PREVIOUS_RELEASE}"  == "" ]
-then
-  PREVIOUS_RELEASE=$(git describe --tags --abbrev=0)
-fi
 
 echo "## What has changed" >> ${CHANGELOG_FILE}
 git log "${PREVIOUS_RELEASE}"..HEAD --pretty=tformat:"%h" --reverse | while read -r commit
