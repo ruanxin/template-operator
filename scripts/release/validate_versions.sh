@@ -13,7 +13,7 @@ echo "Versions match."
 
 IMAGE_TO_CHECK="${2:-europe-docker.pkg.dev/kyma-project/prod/template-operator}"
 echo "IMAGE_TO_CHECK $IMAGE_TO_CHECK"
-BUMPED_IMAGE_TAG=$(grep "${IMAGE_TO_CHECK}" ../../sec-scanners-config.yaml | cut -d : -f 2)
+BUMPED_IMAGE_TAG=$(cat ../../sec-scanners-config.yaml | grep "${IMAGE_TO_CHECK}" | cut -d : -f 2)
 echo "BUMPED_IMAGE_TAG $BUMPED_IMAGE_TAG"
 
 if [[ "$BUMPED_IMAGE_TAG" != "$DESIRED_VERSION" ]]; then
