@@ -26,7 +26,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Validate set versions
-        run: ./validate_versions.sh ${{ github.event.inputs.name }} ${{ github.ref_name }}
+        run: ./validate_versions.sh ${{ github.event.inputs.name }}
       - name: Validate pipeline status
         run: ./validate_pipeline_status.sh ${{ github.ref_name }}
 
