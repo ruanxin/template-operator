@@ -7,8 +7,7 @@ set -o pipefail
 
 RELEASE_VERSION=$1
 
-# TODO this needs to be reverted to 'kyma-project' repository after testing!
-REPOSITORY=${REPOSITORY:-lindnerby/template-operator}
+REPOSITORY=${REPOSITORY:-kyma-project/template-operator}
 GITHUB_URL=https://api.github.com/repos/${REPOSITORY}
 GITHUB_AUTH_HEADER="Authorization: Bearer ${GITHUB_TOKEN}"
 

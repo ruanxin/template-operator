@@ -14,8 +14,7 @@ then
   PREVIOUS_RELEASE=$(git describe --tags --abbrev=0)
 fi
 
-# TODO this needs to be reverted to 'kyma-project' repository after testing!
-REPOSITORY=${REPOSITORY:-lindnerby/template-operator}
+REPOSITORY=${REPOSITORY:-kyma-project/template-operator}
 GITHUB_URL=https://api.github.com/repos/${REPOSITORY}
 GITHUB_AUTH_HEADER="Authorization: token ${GITHUB_TOKEN}"
 CHANGELOG_FILE="CHANGELOG.md"
