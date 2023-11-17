@@ -1,0 +1,72 @@
+name: "Create release"
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: "Release name"
+        default: ""
+        required: true
+      since:
+        description: "Changelog since"
+        default: ""
+        required: false
+
+jobs:
+  validate-head-status:
+    name: Validate HEAD
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./scripts/release/
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate set versions
+        run: ./validate_versions.sh ${{ github.event.inputs.name }}
+      - name: Validate pipeline status
+        run: ./validate_pipeline_status.sh ${{ github.ref_name }}
+
+  draft-release:
+    name: Draft release
+    needs: validate-head-status
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Create changelog
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./scripts/release/create_changelog.sh ${{ github.event.inputs.name }} ${{ github.event.inputs.since }}
+      - name: Draft release
+        id: draft-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASE_ID=$(./scripts/release/draft_release.sh ${{ github.event.inputs.name }})
+          echo "release_id=$RELEASE_ID" >> $GITHUB_OUTPUT
+      - name: Create lightweight tag
+        run: |
+          git tag ${{ github.event.inputs.name }}
+          git push origin ${{ github.event.inputs.name }}
+    outputs:
+      release_id: ${{ steps.draft-release.outputs.release_id }}
+
+  publish-release:
+    name: Publish release
+    needs: [validate-head-status, draft-release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Publish release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./scripts/release/publish_release.sh ${{ needs.draft-release.outputs.release_id }}

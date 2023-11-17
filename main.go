@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"time"
 
@@ -60,6 +61,7 @@ type FlagVar struct {
 	rateLimiterFrequency int
 	rateLimiterBurst     int
 	finalState           string
+	printVersion         bool
 }
 
 func init() { //nolint:gochecknoinits
@@ -68,6 +70,9 @@ func init() { //nolint:gochecknoinits
 	//+kubebuilder:scaffold:scheme
 }
 
+//nolint:gochecknoglobals
+var buildVersion = "not_provided"
+
 func main() {
 	flagVar := defineFlagVar()
 	opts := zap.Options{
@@ -75,6 +80,15 @@ func main() {
 	}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
+
+	if flagVar.printVersion {
+		msg := fmt.Sprintf("Template Operator version: %s\n", buildVersion)
+		_, err := os.Stdout.WriteString(msg)
+		if err != nil {
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}
 
 	rateLimiter := controllers.RateLimiter{
 		Burst:           flagVar.rateLimiterBurst,
@@ -145,5 +159,6 @@ func defineFlagVar() *FlagVar {
 		"Indicates the failure max delay in seconds")
 	flag.StringVar(&flagVar.finalState, "final-state", string(v1alpha1.StateReady),
 		"Customize final state, to mimic state behaviour like Ready, Warning")
+	flag.BoolVar(&flagVar.printVersion, "version", false, "Prints the operator version and exits")
 	return flagVar
 }
