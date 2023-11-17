@@ -12,13 +12,10 @@ fi
 echo "Versions match."
 
 IMAGE_TO_CHECK="${2:-europe-docker.pkg.dev/kyma-project/prod/template-operator}"
-echo "IMAGE_TO_CHECK $IMAGE_TO_CHECK"
-BUMPED_IMAGE_TAG=$(cat ../../sec-scanners-config.yaml | grep "${IMAGE_TO_CHECK}" | cut -d : -f 2)
-echo "BUMPED_IMAGE_TAG $BUMPED_IMAGE_TAG"
-
-if [[ "$BUMPED_IMAGE_TAG" != "$DESIRED_VERSION" ]]; then
+BUMPED_IMAGE_TAG=$(grep "${IMAGE_TO_CHECK}" ../../sec-scanners-config.yaml | cut -d : -f 2)
+if [[ "$BUMPED_IMAGE_TAG" != "$EXPECTED_VERSION" ]]; then
   echo "Version tag in sec-scanners-config.yaml file is incorrect!"
-  echo "Wanted not find $DESIRED_VERSION, but got $BUMPED_IMAGE_TAG"
+  echo "Could not find $EXPECTED_VERSION."
   exit 1
 fi
 echo "Image version tag in sec-scanners-config.yaml does match with remote."

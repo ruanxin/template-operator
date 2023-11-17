@@ -1,8 +1,9 @@
 module-name: template-operator
-rc-tag: 0.1.0
-dev-branch: main
+protecode:
+  - europe-docker.pkg.dev/kyma-project/prod/template-operator:0.1.0
 whitesource:
   language: golang-mod
+  subprojects: false
   exclude:
     - "**/test/**"
     - "**/*_test.go"
