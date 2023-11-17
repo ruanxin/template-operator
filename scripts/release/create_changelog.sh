@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 
+PREVIOUS_RELEASE=$2
+
 set -o nounset
 set -o errexit
 set -E
 set -o pipefail
 
 RELEASE_VERSION=$1
-PREVIOUS_RELEASE=$2
+
 if [ "${PREVIOUS_RELEASE}"  == "" ]
 then
   PREVIOUS_RELEASE=$(git describe --tags --abbrev=0)
