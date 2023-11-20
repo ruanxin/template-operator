@@ -1,6 +1,6 @@
 name: kyma-project.io/module/template-operator
 channel: regular
-version: v1.0.0
+version: 0.1.0
 manifest: template-operator.yaml
 security: sec-scanners-config.yaml
 defaultCR: ./config/samples/default-sample-cr.yaml
