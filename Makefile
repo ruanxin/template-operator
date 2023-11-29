@@ -10,6 +10,21 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
+# Credentials used for authenticating into the module registry
+# see `kyma alpha mod create --help for more info`
+
+# This will change the flags of the `kyma alpha module create` command in case we spot credentials
+# Otherwise we will assume http-based local registries without authentication (e.g. for k3d)
+ifneq (,$(PROW_JOB_ID))
+GCP_ACCESS_TOKEN=$(shell gcloud auth application-default print-access-token)
+MODULE_CREATION_FLAGS=--registry $(MODULE_REGISTRY) --module-archive-version-overwrite -c oauth2accesstoken:$(GCP_ACCESS_TOKEN)
+else ifeq (,$(MODULE_CREDENTIALS))
+# when built locally we should not include security content.
+MODULE_CREATION_FLAGS=--registry $(MODULE_REGISTRY) --module-archive-version-overwrite --insecure --sec-scanners-config=sec-scanners-config-local.yaml
+else
+MODULE_CREATION_FLAGS=--registry $(MODULE_REGISTRY) --module-archive-version-overwrite -c $(MODULE_CREDENTIALS)
+endif
+
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # This is a requirement for 'setup-envtest.sh' in the test target.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
@@ -142,6 +157,44 @@ lint: ## Download & Build & Run golangci-lint against code.
 	GOBIN=$(LOCALBIN) go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLANG_CI_LINT_VERSION)
 	$(LOCALBIN)/golangci-lint run
 
+.PHONY: configure-git-origin
+configure-git-origin:
+	@git remote | grep '^origin$$' -q || \
+		git remote add origin https://github.com/kyma-project/template-operator
+
 .PHONY: build-manifests
 build-manifests: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default > template-operator.yaml
+
+DEFAULT_CR ?= $(shell pwd)/config/samples/default-sample-cr.yaml
+.PHONY: build-module
+build-module: kyma build-manifests configure-git-origin ## Build the Module and push it to a registry defined in MODULE_REGISTRY
+	#################################################################
+	## Building module with:
+	# - image: ${IMG}
+	# - channel: ${MODULE_CHANNEL}
+	# - name: kyma-project.io/module/$(MODULE_NAME)
+	# - version: $(MODULE_VERSION)
+	echo "running alpha create"
+	@$(KYMA) alpha create module --path . --output=module-template.yaml --module-config-file=module-config.yaml $(MODULE_CREATION_FLAGS)
+
+########## Kyma CLI ###########
+KYMA_STABILITY ?= unstable
+
+# $(call os_error, os-type, os-architecture)
+define os_error
+$(error Error: unsuported platform OS_TYPE:$1, OS_ARCH:$2; to mitigate this problem set variable KYMA with absolute path to kyma-cli binary compatible with your operating system and architecture)
+endef
+
+KYMA_FILE_NAME ?= $(shell ./scripts/local/get_kyma_file_name.sh ${OS_TYPE} ${OS_ARCH})
+KYMA ?= $(LOCALBIN)/kyma-$(KYMA_STABILITY)
+
+.PHONY: kyma
+kyma: $(LOCALBIN) $(KYMA) ## Download kyma CLI locally if necessary.
+$(KYMA):
+	#################################################################
+	$(if $(KYMA_FILE_NAME),,$(call os_error, ${OS_TYPE}, ${OS_ARCH}))
+	## Downloading Kyma CLI: https://storage.googleapis.com/kyma-cli-$(KYMA_STABILITY)/$(KYMA_FILE_NAME)
+	test -f $@ || curl -s -Lo $(KYMA) https://storage.googleapis.com/kyma-cli-$(KYMA_STABILITY)/$(KYMA_FILE_NAME)
+	chmod 0100 $(KYMA)
+	${KYMA} version -c
