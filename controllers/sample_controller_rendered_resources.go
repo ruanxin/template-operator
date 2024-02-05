@@ -49,7 +49,8 @@ type SampleReconciler struct {
 	*rest.Config
 	// EventRecorder for creating k8s events
 	record.EventRecorder
-	FinalState v1alpha1.State
+	FinalState         v1alpha1.State
+	FinalDeletionState v1alpha1.State
 }
 
 type ManifestResources struct {
@@ -112,11 +113,9 @@ func (r *SampleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// check if deletionTimestamp is set, retry until it gets deleted
 	status := getStatusFromSample(&objectInstance)
 
-	// set state to Deleting if not set for an object with deletion timestamp
-	if !objectInstance.GetDeletionTimestamp().IsZero() &&
-		status.State != v1alpha1.StateDeleting {
-		// if the status is not yet set to deleting, also update the status
-		return ctrl.Result{}, r.setStatusForObjectInstance(ctx, &objectInstance, status.WithState(v1alpha1.StateDeleting))
+	// set state to FinalDeletionState (default is Deleting) if not set for an object with deletion timestamp
+	if !objectInstance.GetDeletionTimestamp().IsZero() && status.State != r.FinalDeletionState {
+		return ctrl.Result{}, r.setStatusForObjectInstance(ctx, &objectInstance, status.WithState(r.FinalDeletionState))
 	}
 
 	// add finalizer if not present
@@ -154,6 +153,11 @@ func (r *SampleReconciler) HandleInitialState(ctx context.Context, objectInstanc
 func (r *SampleReconciler) HandleProcessingState(ctx context.Context, objectInstance *v1alpha1.Sample) error {
 	status := getStatusFromSample(objectInstance)
 	if err := r.processResources(ctx, objectInstance); err != nil {
+		// stay in Processing state if FinalDeletionState is set to Processing
+		if !objectInstance.GetDeletionTimestamp().IsZero() && r.FinalDeletionState == v1alpha1.StateProcessing {
+			return nil
+		}
+
 		r.Event(objectInstance, "Warning", "ResourcesInstall", err.Error())
 		return r.setStatusForObjectInstance(ctx, objectInstance, status.
 			WithState(v1alpha1.StateError).
@@ -170,6 +174,11 @@ func (r *SampleReconciler) HandleErrorState(ctx context.Context, objectInstance 
 	status := getStatusFromSample(objectInstance)
 	if err := r.processResources(ctx, objectInstance); err != nil {
 		return err
+	}
+
+	// stay in Error state if FinalDeletionState is set to Error
+	if !objectInstance.GetDeletionTimestamp().IsZero() && r.FinalDeletionState == v1alpha1.StateError {
+		return nil
 	}
 	// set eventual state to Ready - if no errors were found
 	return r.setStatusForObjectInstance(ctx, objectInstance, status.
@@ -196,6 +205,11 @@ func (r *SampleReconciler) HandleDeletingState(ctx context.Context, objectInstan
 	// so please make sure the types are available on the target cluster
 	for _, obj := range resourceObjs.Items {
 		if err = r.Client.Delete(ctx, obj); err != nil && !errors2.IsNotFound(err) {
+			// stay in Deleting state if FinalDeletionState is set to Deleting
+			if !objectInstance.GetDeletionTimestamp().IsZero() && r.FinalDeletionState == v1alpha1.StateDeleting {
+				return nil
+			}
+
 			logger.Error(err, "error during uninstallation of resources")
 			r.Event(objectInstance, "Warning", "ResourcesDelete", "deleting resources error")
 			return r.setStatusForObjectInstance(ctx, objectInstance, status.
@@ -215,6 +229,12 @@ func (r *SampleReconciler) HandleDeletingState(ctx context.Context, objectInstan
 func (r *SampleReconciler) HandleReadyState(ctx context.Context, objectInstance *v1alpha1.Sample) error {
 	status := getStatusFromSample(objectInstance)
 	if err := r.processResources(ctx, objectInstance); err != nil {
+		// stay in Ready/Warning state if FinalDeletionState is set to Ready/Warning
+		if !objectInstance.GetDeletionTimestamp().IsZero() &&
+			(r.FinalDeletionState == v1alpha1.StateReady || r.FinalDeletionState == v1alpha1.StateWarning) {
+			return nil
+		}
+
 		r.Event(objectInstance, "Warning", "ResourcesInstall", err.Error())
 		return r.setStatusForObjectInstance(ctx, objectInstance, status.
 			WithState(v1alpha1.StateError).

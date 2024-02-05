@@ -27,6 +27,12 @@ patches:
         value: --final-state=Ready
     target:
       kind: Deployment
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/args/-
+        value: --final-deletion-state=Deleting
+    target:
+      kind: Deployment
 
 components:
 - ../crd

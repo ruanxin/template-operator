@@ -61,6 +61,7 @@ type FlagVar struct {
 	rateLimiterFrequency int
 	rateLimiterBurst     int
 	finalState           string
+	finalDeletionState   string
 	printVersion         bool
 }
 
@@ -116,10 +117,11 @@ func main() {
 	}
 
 	if err = (&controllers.SampleReconciler{
-		Client:        mgr.GetClient(),
-		Scheme:        mgr.GetScheme(),
-		EventRecorder: mgr.GetEventRecorderFor(operatorName),
-		FinalState:    v1alpha1.State(flagVar.finalState),
+		Client:             mgr.GetClient(),
+		Scheme:             mgr.GetScheme(),
+		EventRecorder:      mgr.GetEventRecorderFor(operatorName),
+		FinalState:         v1alpha1.State(flagVar.finalState),
+		FinalDeletionState: v1alpha1.State(flagVar.finalDeletionState),
 	}).SetupWithManager(mgr, rateLimiter); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Sample")
 		os.Exit(1)
@@ -159,6 +161,8 @@ func defineFlagVar() *FlagVar {
 		"Indicates the failure max delay in seconds")
 	flag.StringVar(&flagVar.finalState, "final-state", string(v1alpha1.StateReady),
 		"Customize final state, to mimic state behaviour like Ready, Warning")
+	flag.StringVar(&flagVar.finalDeletionState, "final-deletion-state", string(v1alpha1.StateDeleting),
+		"Customize final state when module marked for deletion, to mimic state behaviour like Ready, Warning")
 	flag.BoolVar(&flagVar.printVersion, "version", false, "Prints the operator version and exits")
 	return flagVar
 }

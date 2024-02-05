@@ -1,12 +1,11 @@
 package controllers_test
 
 import (
-	"time"
-
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/kubernetes"
+	"time"
 
 	"github.com/kyma-project/template-operator/api/v1alpha1"
 
@@ -17,41 +16,69 @@ import (
 )
 
 var (
-	sampleName = "kyma-sample"
-	podNs      = "redis"
-	podName    = "busybox-pod"
+	podNs   = "redis"
+	podName = "busybox-pod"
 )
 
-func testFn(sampleCR *v1alpha1.Sample, desiredState v1alpha1.State, desiredConditionStatus metav1.ConditionStatus,
-	resourceCheck func(g Gomega) bool,
-) {
-	// create SampleCR
-	Expect(k8sClient.Create(ctx, sampleCR)).To(Succeed())
-
-	// check if SampleCR is in the desired State
+var _ = Describe("Sample CR is created with the correct resource path", Ordered, func() {
+	sampleCR := createSampleCR("valid-sample", "./test/busybox/manifest")
 	sampleCRKey := client.ObjectKeyFromObject(sampleCR)
-	Eventually(getCRStatus(sampleCRKey)).
-		WithTimeout(30 * time.Second).
-		WithPolling(500 * time.Millisecond).
-		Should(Equal(CRStatus{State: desiredState, InstallConditionStatus: desiredConditionStatus, Err: nil}))
 
-	// check if deployed resources are up and running
-	Eventually(resourceCheck).
-		WithTimeout(30 * time.Second).
-		WithPolling(500 * time.Millisecond).
-		Should(BeTrue())
+	It("should create SampleCR and resources", func() {
+		Expect(k8sClient.Create(ctx, sampleCR)).To(Succeed())
 
-	// clean up SampleCR
-	Expect(k8sClient.Delete(ctx, sampleCR)).To(Succeed())
+		Eventually(getCRStatus(sampleCRKey)).
+			WithTimeout(30 * time.Second).
+			WithPolling(500 * time.Millisecond).
+			Should(Equal(CRStatus{State: v1alpha1.StateReady, InstallConditionStatus: metav1.ConditionTrue, Err: nil}))
 
-	// check installed resources are deleted
-	Eventually(checkDeleted(sampleCRKey)).
-		WithTimeout(30 * time.Second).
-		WithPolling(500 * time.Millisecond).
-		Should(BeTrue())
-}
+		Eventually(getPod(podNs, podName)).
+			WithTimeout(30 * time.Second).
+			WithPolling(500 * time.Millisecond).
+			Should(BeTrue())
+	})
 
-func createSampleCR(sampleName string, path string) *v1alpha1.Sample {
+	It("should set state to Warning when deleted after setting FinalDeletionState", func() {
+		reconciler.FinalDeletionState = v1alpha1.StateWarning
+		Expect(k8sClient.Delete(ctx, sampleCR)).To(Succeed())
+
+		Eventually(getCRStatus(sampleCRKey)).
+			WithTimeout(30 * time.Second).
+			WithPolling(500 * time.Millisecond).
+			Should(Equal(CRStatus{State: v1alpha1.StateWarning,
+				InstallConditionStatus: metav1.ConditionTrue, Err: nil}))
+		Consistently(getCRStatus(sampleCRKey)).
+			WithTimeout(5 * time.Second).
+			WithPolling(100 * time.Millisecond).
+			Should(Equal(CRStatus{State: v1alpha1.StateWarning,
+				InstallConditionStatus: metav1.ConditionTrue, Err: nil}))
+	})
+
+	It("should delete when FinalDeletionState set to Deleting", func() {
+		reconciler.FinalDeletionState = v1alpha1.StateDeleting
+		Eventually(checkDeleted(sampleCRKey)).
+			WithTimeout(30 * time.Second).
+			WithPolling(500 * time.Millisecond).
+			Should(BeTrue())
+	})
+})
+
+var _ = Describe("Sample CR is created with an incorrect resource path", Ordered, func() {
+	sampleCR := createSampleCR("invalid-sample", "./invalid/path")
+	sampleCRKey := client.ObjectKeyFromObject(sampleCR)
+
+	It("should create SampleCR in Error state", func() {
+		Expect(k8sClient.Create(ctx, sampleCR)).To(Succeed())
+		Eventually(getCRStatus(sampleCRKey)).
+			WithTimeout(30 * time.Second).
+			WithPolling(500 * time.Millisecond).
+			Should(Equal(CRStatus{State: v1alpha1.StateError, InstallConditionStatus: metav1.ConditionFalse, Err: nil}))
+
+		Expect(k8sClient.Delete(ctx, sampleCR)).To(Succeed())
+	})
+})
+
+func createSampleCR(sampleName, path string) *v1alpha1.Sample {
 	return &v1alpha1.Sample{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       string(v1alpha1.SampleKind),
@@ -128,21 +155,3 @@ func checkDeleted(sampleObjKey client.ObjectKey) func(g Gomega) bool {
 		return false
 	}
 }
-
-var _ = Describe("Sample CR scenarios", Ordered, func() {
-	DescribeTable("should set SampleCR to appropriate states",
-		testFn,
-		Entry("when Sample CR is created with the correct resource path",
-			createSampleCR(sampleName, "./test/busybox/manifest"),
-			v1alpha1.StateReady,
-			metav1.ConditionTrue,
-			getPod(podNs, podName),
-		),
-		Entry("when Sample CR is created with an incorrect resource path",
-			createSampleCR(sampleName, "invalid/path"),
-			v1alpha1.StateError,
-			metav1.ConditionFalse,
-			func(g Gomega) bool { return true },
-		),
-	)
-})

@@ -105,10 +105,11 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 
 	reconciler = &controllers.SampleReconciler{
-		Client:        k8sManager.GetClient(),
-		Scheme:        scheme.Scheme,
-		EventRecorder: k8sManager.GetEventRecorderFor("tests"),
-		FinalState:    operatorkymaprojectiov1alpha1.StateReady,
+		Client:             k8sManager.GetClient(),
+		Scheme:             scheme.Scheme,
+		EventRecorder:      k8sManager.GetEventRecorderFor("tests"),
+		FinalState:         operatorkymaprojectiov1alpha1.StateReady,
+		FinalDeletionState: operatorkymaprojectiov1alpha1.StateDeleting,
 	}
 
 	err = reconciler.SetupWithManager(k8sManager, rateLimiter)
