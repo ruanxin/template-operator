@@ -1,9 +1,8 @@
 #!/bin/bash
 
 function get_kyma_file_name () {
-
-	local _OS_TYPE=$1
-	local _OS_ARCH=$2
+	_OS_TYPE="$(uname -s)"
+  _OS_ARCH="$(uname -m)"
 
 	[ "$_OS_TYPE" == "Linux"   ] && [ "$_OS_ARCH" == "x86_64" ] && echo "kyma-linux"     ||
 	[ "$_OS_TYPE" == "Linux"   ] && [ "$_OS_ARCH" == "arm64"  ] && echo "kyma-linux-arm" ||
@@ -12,4 +11,4 @@ function get_kyma_file_name () {
 	[ "$_OS_TYPE" == "Darwin"  ] && [ "$_OS_ARCH" == "x86_64" ] && echo "kyma-darwin"
 }
 
-get_kyma_file_name "$@"
+get_kyma_file_name
