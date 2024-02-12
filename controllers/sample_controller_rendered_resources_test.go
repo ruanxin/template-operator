@@ -1,11 +1,12 @@
 package controllers_test
 
 import (
+	"time"
+
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/kubernetes"
-	"time"
 
 	"github.com/kyma-project/template-operator/api/v1alpha1"
 
@@ -45,13 +46,17 @@ var _ = Describe("Sample CR is created with the correct resource path", Ordered,
 		Eventually(getCRStatus(sampleCRKey)).
 			WithTimeout(30 * time.Second).
 			WithPolling(500 * time.Millisecond).
-			Should(Equal(CRStatus{State: v1alpha1.StateWarning,
-				InstallConditionStatus: metav1.ConditionTrue, Err: nil}))
+			Should(Equal(CRStatus{
+				State:                  v1alpha1.StateWarning,
+				InstallConditionStatus: metav1.ConditionTrue, Err: nil,
+			}))
 		Consistently(getCRStatus(sampleCRKey)).
 			WithTimeout(5 * time.Second).
 			WithPolling(100 * time.Millisecond).
-			Should(Equal(CRStatus{State: v1alpha1.StateWarning,
-				InstallConditionStatus: metav1.ConditionTrue, Err: nil}))
+			Should(Equal(CRStatus{
+				State:                  v1alpha1.StateWarning,
+				InstallConditionStatus: metav1.ConditionTrue, Err: nil,
+			}))
 	})
 
 	It("should delete when FinalDeletionState set to Deleting", func() {

@@ -22,6 +22,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+
 	"sigs.k8s.io/controller-runtime/pkg/scheme"
 
 	"github.com/go-logr/logr"
@@ -70,13 +71,13 @@ func init() { //nolint:gochecknoinits
 	SchemeBuilder.Register(&v1alpha1.Sample{}, &v1alpha1.SampleList{})
 }
 
-//+kubebuilder:rbac:groups=operator.kyma-project.io,resources=samples,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=operator.kyma-project.io,resources=samples/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=operator.kyma-project.io,resources=samples/finalizers,verbs=update
-//+kubebuilder:rbac:groups="",resources=events,verbs=create;patch;get;list;watch
-//+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups="",resources=configmaps,verbs=create;patch;delete
-//+kubebuilder:rbac:groups="apps",resources=deployments,verbs=create;patch;delete
+// +kubebuilder:rbac:groups=operator.kyma-project.io,resources=samples,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=operator.kyma-project.io,resources=samples/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=operator.kyma-project.io,resources=samples/finalizers,verbs=update
+// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch;get;list;watch
+// +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=configmaps,verbs=create;patch;delete
+// +kubebuilder:rbac:groups="apps",resources=deployments,verbs=create;patch;delete
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *SampleReconciler) SetupWithManager(mgr ctrl.Manager, rateLimiter RateLimiter) error {
@@ -118,9 +119,11 @@ func (r *SampleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, r.setStatusForObjectInstance(ctx, &objectInstance, status.WithState(r.FinalDeletionState))
 	}
 
-	// add finalizer if not present
-	if controllerutil.AddFinalizer(&objectInstance, finalizer) {
-		return ctrl.Result{}, r.ssa(ctx, &objectInstance)
+	if objectInstance.GetDeletionTimestamp().IsZero() {
+		// add finalizer if not present
+		if controllerutil.AddFinalizer(&objectInstance, finalizer) {
+			return ctrl.Result{}, r.ssa(ctx, &objectInstance)
+		}
 	}
 
 	switch status.State {
@@ -249,7 +252,8 @@ func (r *SampleReconciler) setStatusForObjectInstance(ctx context.Context, objec
 	objectInstance.Status = *status
 
 	if err := r.ssaStatus(ctx, objectInstance); err != nil {
-		r.Event(objectInstance, "Warning", "ErrorUpdatingStatus", fmt.Sprintf("updating state to %v", string(status.State)))
+		r.Event(objectInstance, "Warning", "ErrorUpdatingStatus",
+			fmt.Sprintf("updating state to %v", string(status.State)))
 		return fmt.Errorf("error while updating status %s to: %w", status.State, err)
 	}
 
