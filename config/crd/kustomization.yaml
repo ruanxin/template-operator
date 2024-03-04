@@ -6,6 +6,7 @@ kind: Component
 # It should be run by config/default
 resources:
   - bases/operator.kyma-project.io_samples.yaml
+  - bases/operator.kyma-project.io_manageds.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:
