@@ -14,4 +14,4 @@ This document outlines how to use arguments to imitate specific module behavior 
 
 ## Related End-to-End Tests:
 
-- [Warning Status Propagation](https://github.com/kyma-project/lifecycle-manager/blob/a0c49436f3d11d03c9a7556ec11c7c9f69d621d9/tests/e2e/warning_status_propagation_test.go#L17): This test is related to the scenario where the `final-state`,  `final-deletion-state` arguments are used to set the Module CR's final state to `Warning`.
+- [Warning Status Propagation](https://github.com/kyma-project/lifecycle-manager/blob/a0c49436f3d11d03c9a7556ec11c7c9f69d621d9/tests/e2e/warning_status_propagation_test.go#L17) - in this test scenario the `final-state` and `final-deletion-state` arguments are used to set the Module CR's final state to `Warning`.
