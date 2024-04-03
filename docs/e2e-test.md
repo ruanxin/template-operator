@@ -10,7 +10,7 @@ This document outlines how to use arguments to imitate specific module behavior 
 
 - `final-deletion-state`
 
-This argument is used to customize the final state of the Module CR (`sample-yaml`) when the CR is flagged for deletion. The default state in this instance is `Deleting`.
+   This argument is used to customize the final state of a Module CR (`sample-yaml`) when the CR is flagged for deletion. The default state in this case is `Deleting`.
 
 ## Related End-to-End Tests:
 
