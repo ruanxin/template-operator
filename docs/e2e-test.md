@@ -4,7 +4,7 @@ This document outlines how to use arguments to imitate specific module behavior 
 
 - `final-state`
 
-This argument allows customization of the final state of the Module CR (`sample-yaml`). By default, the Module CR will transition to the `Ready` state. However, the final state can be configured to differ from this default.
+   This argument allows customization of the final state of a Module CR (`sample-yaml`). By default, a Module CR transitions to the `Ready` state. However, the final state can be configured to differ from this default.
 
 For instance, the `final-state` can be overridden to `Warning` by adding `--final-state=Warning` as a deployment argument. In this case, once the Module CR is deployed, it will remain in the `Warning` state.
 
