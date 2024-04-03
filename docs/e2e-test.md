@@ -1,6 +1,6 @@
 # Enhanced Deployment Configuration Template for End-to-End Testing
 
-This document outlines the process of utilizing arguments to imitate specific module behavior to support certain end-to-end (e2e) test scenarios.
+This document outlines how to use arguments to imitate specific module behavior to support certain end-to-end (e2e) test scenarios.
 
 - `final-state`
 
