@@ -3,7 +3,7 @@ FROM golang:1.22.2-alpine as builder
 ARG TARGETOS
 ARG TARGETARCH
 
-WORKDIR /workspace
+WORKDIR /template-operator
 # Copy the Go Modules manifests
 COPY go.mod go.mod
 COPY go.sum go.sum
@@ -11,6 +11,8 @@ COPY go.sum go.sum
 COPY main.go main.go
 COPY api api/
 COPY controllers controllers/
+COPY module-data module-data/
+RUN chmod 755 module-data/
 
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
@@ -28,8 +30,9 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -ldflags
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /
-COPY --from=builder /workspace/manager .
-COPY module-data module-data/ 
+
+COPY --chown=65532:65532 --from=builder /template-operator/manager .
+COPY --chown=65532:65532 --from=builder /template-operator/module-data module-data/
 USER 65532:65532
 
 ENTRYPOINT ["/manager"]
