@@ -1,6 +1,6 @@
 module github.com/kyma-project/template-operator/api
 
-go 1.22.2
+go 1.22.4
 
 require k8s.io/apimachinery v0.30.1
 
