@@ -2,7 +2,7 @@ module github.com/kyma-project/template-operator/api
 
 go 1.22.4
 
-require k8s.io/apimachinery v0.30.1
+require k8s.io/apimachinery v0.30.2
 
 require (
 	github.com/go-logr/logr v1.4.1 // indirect
