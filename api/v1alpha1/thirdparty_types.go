@@ -22,16 +22,16 @@ import (
 
 // +kubebuilder:object:root=true
 
-type Managed struct {
+type ThirdParty struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// ManagedList contains a list of Managed.
-type ManagedList struct {
+// ThirdPartyList contains a list of ThirdParty.
+type ThirdPartyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Managed `json:"items"`
+	Items           []ThirdParty `json:"items"`
 }
