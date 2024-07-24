@@ -3,7 +3,7 @@ kind: Component
 
 # This kustomization.yaml is not intended to be run by itself,
 # since it depends on service name and namespace that are out of this kustomize package.
-# It should be run by config/default
+# It should be run by config/overlays/deployment or config/overlays/statefulset
 resources:
   - bases/operator.kyma-project.io_samples.yaml
   - bases/operator.kyma-project.io_manageds.yaml

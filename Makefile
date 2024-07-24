@@ -104,11 +104,20 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 .PHONY: deploy
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	$(KUSTOMIZE) build config/overlays/deployment | kubectl apply -f -
+
+.PHONY: deploy-statefulset
+deploy-statefulset: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	$(KUSTOMIZE) build config/overlays/statefulset | kubectl apply -f -
 
 .PHONY: undeploy
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+	$(KUSTOMIZE) build config/overlays/deployment | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+
+.PHONY: undeploy-statefulset
+undeploy-statefulset: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+	$(KUSTOMIZE) build config/overlays/statefulset | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 ##@ Tools
 
@@ -164,8 +173,12 @@ configure-git-origin:
 		git remote add origin https://github.com/kyma-project/template-operator
 
 .PHONY: build-manifests
-build-manifests: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/default > template-operator.yaml
+build-manifests: manifests kustomize
+	$(KUSTOMIZE) build config/overlays/deployment > template-operator.yaml
+
+.PHONY: build-statefulset-manifests
+build-statefulset-manifests: manifests kustomize
+	$(KUSTOMIZE) build config/overlays/statefulset > template-operator.yaml
 
 DEFAULT_CR ?= $(shell pwd)/config/samples/default-sample-cr.yaml
 .PHONY: build-module

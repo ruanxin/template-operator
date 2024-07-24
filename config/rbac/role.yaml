@@ -43,6 +43,14 @@ rules:
   - delete
   - patch
 - apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - create
+  - delete
+  - patch
+- apiGroups:
   - operator.kyma-project.io
   resources:
   - samples

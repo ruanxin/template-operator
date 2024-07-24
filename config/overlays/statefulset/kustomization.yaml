@@ -12,8 +12,8 @@ namespace: template-operator-system
 namePrefix: template-operator-
 
 resources:
-  - ../base
-  - ../manager/deployment
+  - ../../base
+  - ../../manager/statefulset
 
 patches:
   - patch: |-
@@ -21,10 +21,10 @@ patches:
         path: /spec/template/spec/containers/0/args/-
         value: --final-state=Ready
     target:
-      kind: Deployment
+      kind: StatefulSet
   - patch: |-
       - op: add
         path: /spec/template/spec/containers/0/args/-
         value: --final-deletion-state=Deleting
     target:
-      kind: Deployment
+      kind: StatefulSet

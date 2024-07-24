@@ -12,8 +12,8 @@ namespace: template-operator-system
 namePrefix: template-operator-
 
 resources:
-  - ../base
-  - ../manager/deployment
+  - ../../base
+  - ../../manager/deployment
 
 patches:
   - patch: |-
