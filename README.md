@@ -344,7 +344,9 @@ You can also define multiple files in `config/samples`, but you must specify the
    - `beta`: (Optional) Determines whether ModuleTemplate must have the beta flag or not. The type is bool.
    - `labels`: (Optional) Additional labels for ModuleTemplate.
    - `annotations`: (Optional) Additional annotations for ModuleTemplate.
-   - `customStateCheck`: (Optional) Specifies custom state checks for the module.
+   - `customStateCheck`: (Optional) [DEPRECATED] Specifies custom state checks for the module.
+   
+   > **CAUTION:** This field was deprecated at the end of July 2024 and will be deleted in the next [Lifecycle Manager](https://github.com/kyma-project/lifecycle-manager/tree/main/) API versions. 
 
    An example configuration:
 
