@@ -13,7 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	yamlUtil "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/util/workqueue"
-	"sigs.k8s.io/controller-runtime/pkg/ratelimiter"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/yaml"
 )
 
@@ -63,8 +63,8 @@ func parseManifestStringToObjects(manifest string) (*ManifestResources, error) {
 // both an overall (token bucket) and per-item (exponential) rate limiting.
 func TemplateRateLimiter(failureBaseDelay time.Duration, failureMaxDelay time.Duration,
 	frequency int, burst int,
-) ratelimiter.RateLimiter {
-	return workqueue.NewMaxOfRateLimiter(
-		workqueue.NewItemExponentialFailureRateLimiter(failureBaseDelay, failureMaxDelay),
-		&workqueue.BucketRateLimiter{Limiter: rate.NewLimiter(rate.Limit(frequency), burst)})
+) workqueue.TypedRateLimiter[ctrl.Request] {
+	return workqueue.NewTypedMaxOfRateLimiter(
+		workqueue.NewTypedItemExponentialFailureRateLimiter[ctrl.Request](failureBaseDelay, failureMaxDelay),
+		&workqueue.TypedBucketRateLimiter[ctrl.Request]{Limiter: rate.NewLimiter(rate.Limit(frequency), burst)})
 }
