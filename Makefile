@@ -161,7 +161,7 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 GOLANG_CI_LINT = $(LOCALBIN)/golangci-lint
-GOLANG_CI_LINT_VERSION ?= v1.56.2
+GOLANG_CI_LINT_VERSION ?= v1.60.3
 .PHONY: lint
 lint: ## Download & Build & Run golangci-lint against code.
 	GOBIN=$(LOCALBIN) go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLANG_CI_LINT_VERSION)
