@@ -12,7 +12,7 @@ uploadFile() {
   echo "Uploading ${filePath} as ${ghAsset}"
   response=$(curl -s -o output.txt -w "%{http_code}" \
                   --request POST --data-binary @"$filePath" \
-                  -H "Authorization: token $BOT_GITHUB_TOKEN" \
+                  -H "Authorization: token $GITHUB_TOKEN" \
                   -H "Content-Type: text/yaml" \
                    "$ghAsset")
   if [[ "$response" != "201" ]]; then
@@ -31,14 +31,10 @@ MODULE_VERSION=${PULL_BASE_REF} make build-manifests
 echo "Generated template-operator.yaml:"
 cat template-operator.yaml
 
-MODULE_VERSION=${PULL_BASE_REF} make build-module
-echo "Generated module-template.yaml:"
-cat module-template.yaml
-
 echo "Fetching releases"
 CURL_RESPONSE=$(curl -w "%{http_code}" -sL \
                 -H "Accept: application/vnd.github+json" \
-                -H "Authorization: Bearer $BOT_GITHUB_TOKEN"\
+                -H "Authorization: Bearer $GITHUB_TOKEN"\
                 https://api.github.com/repos/kyma-project/template-operator/releases)
 JSON_RESPONSE=$(sed '$ d' <<< "${CURL_RESPONSE}")
 HTTP_CODE=$(tail -n1 <<< "${CURL_RESPONSE}")
@@ -62,6 +58,4 @@ UPLOAD_URL="https://uploads.github.com/repos/kyma-project/template-operator/rele
 
 echo "$UPLOAD_URL"
 uploadFile "template-operator.yaml" "${UPLOAD_URL}?name=template-operator.yaml"
-uploadFile "module-template.yaml" "${UPLOAD_URL}?name=module-template.yaml"
 uploadFile "config/samples/default-sample-cr.yaml" "${UPLOAD_URL}?name=default-sample-cr.yaml"
-uploadFile "module-config.yaml" "${UPLOAD_URL}?name=module-config.yaml"

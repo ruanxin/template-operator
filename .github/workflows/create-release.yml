@@ -54,6 +54,12 @@ jobs:
         run: |
           git tag ${{ github.event.inputs.name }}
           git push origin ${{ github.event.inputs.name }}
+      - name: Create release assets
+        id: create-assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PULL_BASE_REF: ${{ github.event.inputs.name }}
+        run: ./scripts/release/upload_assets.sh
     outputs:
       release_id: ${{ steps.draft-release.outputs.release_id }}
 
