@@ -195,7 +195,7 @@ build-module: kyma build-manifests configure-git-origin ## Build the Module and 
 ########## Kyma CLI ###########
 KYMA_STABILITY ?= unstable
 
-# $(call os_error, os-type, os-architecture)
+# $(call os_error, os-type, os-architecture)ddd
 define os_error
 $(error Error: unsuported platform OS_TYPE:$1, OS_ARCH:$2; to mitigate this problem set variable KYMA with absolute path to kyma-cli binary compatible with your operating system and architecture)
 endef
