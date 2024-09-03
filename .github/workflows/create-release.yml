@@ -25,8 +25,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Validate set versions
-        run: ./validate_versions.sh ${{ github.event.inputs.name }}
+      - name: Validate the release tag
+        run: ./validate_release_tag.sh ${{ github.event.inputs.name }}
       - name: Validate pipeline status
         run: ./validate_pipeline_status.sh ${{ github.ref_name }}
 
