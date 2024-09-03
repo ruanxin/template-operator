@@ -1,4 +1,4 @@
-name: pull-build-template-operator
+name: build-template-operator
 
 on:
   push:
