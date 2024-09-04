@@ -43,13 +43,13 @@ jobs:
 #        env:
 #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #        run: ./scripts/release/create_changelog.sh ${{ github.event.inputs.name }} ${{ github.event.inputs.since }}
-      - name: Draft release
-        id: draft-release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          RELEASE_ID=$(./scripts/release/draft_release.sh ${{ github.event.inputs.name }})
-          echo "release_id=$RELEASE_ID" >> $GITHUB_OUTPUT
+#      - name: Draft release
+#        id: draft-release
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        run: |
+#          RELEASE_ID=$(./scripts/release/draft_release.sh ${{ github.event.inputs.name }})
+#          echo "release_id=$RELEASE_ID" >> $GITHUB_OUTPUT
       - name: Create tag
         run: |
           git tag ${{ github.event.inputs.name }}
@@ -64,12 +64,12 @@ jobs:
           ITERATIONS: 40
           SLEEP_SECONDS: 30
         run: ./scripts/release/wait_for_image.sh ${{ env.IMAGE_REPO }}:${{ github.event.inputs.name }} $ITERATIONS $SLEEP_SECONDS
-      - name: Create release assets
-        id: create-assets
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PULL_BASE_REF: ${{ github.event.inputs.name }}
-        run: ./scripts/release/upload_assets.sh
+#      - name: Create release assets
+#        id: create-assets
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#          PULL_BASE_REF: ${{ github.event.inputs.name }}
+#        run: ./scripts/release/upload_assets.sh
     outputs:
       release_id: ${{ steps.draft-release.outputs.release_id }}
 
