@@ -50,10 +50,14 @@ jobs:
         run: |
           RELEASE_ID=$(./scripts/release/draft_release.sh ${{ github.event.inputs.name }})
           echo "release_id=$RELEASE_ID" >> $GITHUB_OUTPUT
-      - name: Create lightweight tag
+      - name: Create tag
         run: |
           git tag ${{ github.event.inputs.name }}
           git push origin ${{ github.event.inputs.name }} --tags
+      - name: Build image
+        uses: ./.github/workflows/build-template-operator.yml
+        with:
+          tag: "${{ github.event.inputs.name }}"
       - name: Wait for the Docker image
         timeout-minutes: 20
         env:

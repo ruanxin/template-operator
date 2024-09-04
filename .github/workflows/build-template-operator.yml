@@ -4,12 +4,15 @@ on:
   push:
     branches:
       - main  # This will get tagged with `latest` and `v{{DATE}}-{{COMMIT_HASH_SHORT}}`
-    tags:
-      - '[0-9]+.[0-9]+.[0-9]+'
-      - '[0-9]+.[0-9]+.[0-9]+-*'
   pull_request_target:
     types: [ opened, edited, synchronize, reopened, ready_for_review ]
-
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Additional tag for built images'
+        required: false
+        type: string
+        default: ""
 permissions:
   id-token: write # This is required for requesting the JWT token
   contents: read # This is required for actions/checkout
@@ -25,8 +28,8 @@ jobs:
       - name: Get the latest tag
         id: get_tag
         run: |
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_type }}" == "tag" ]]; then
-            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          if [[ "${{ inputs.tag }}" != "" ]]; then
+            echo "tag=${{ inputs.tag }}" >> $GITHUB_OUTPUT
           elif [[ "${{ github.event_name }}" == "push" ]]; then
             echo "tag=latest" >> $GITHUB_OUTPUT
           fi
@@ -34,9 +37,13 @@ jobs:
         run: echo ${{ steps.get_tag.outputs.TAG }}
   build-image:
     needs: compute-tag
-    uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main
-    with:
-      name: template-operator
-      dockerfile: Dockerfile
-      context: .
-      tags: ${{ needs.compute-tag.outputs.tag }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Echo the tag
+      run: echo ${{ needs.compute-tag.outputs.tag }}
+#    uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main
+#    with:
+#      name: template-operator
+#      dockerfile: Dockerfile
+#      context: .
+#      tags: ${{ needs.compute-tag.outputs.tag }}
