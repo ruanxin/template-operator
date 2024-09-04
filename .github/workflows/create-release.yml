@@ -54,10 +54,7 @@ jobs:
         run: |
           git tag ${{ github.event.inputs.name }}
           git push origin ${{ github.event.inputs.name }} --tags
-      - name: Build image
-        uses: ./.github/workflows/build-template-operator.yml
-        with:
-          tag: "${{ github.event.inputs.name }}"
+
       - name: Wait for the Docker image
         timeout-minutes: 20
         env:
@@ -72,7 +69,11 @@ jobs:
 #        run: ./scripts/release/upload_assets.sh
     outputs:
       release_id: ${{ steps.draft-release.outputs.release_id }}
-
+  builds:
+    needs: draft-release
+    uses: ./.github/workflows/build-template-operator.yml
+    with:
+      tag: "${{ github.event.inputs.name }}"
   publish-release:
     name: Publish release
     needs: [validate-head-status, draft-release]
