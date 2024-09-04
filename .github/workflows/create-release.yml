@@ -55,12 +55,6 @@ jobs:
           git tag ${{ github.event.inputs.name }}
           git push origin ${{ github.event.inputs.name }} --tags
 
-      - name: Wait for the Docker image
-        timeout-minutes: 20
-        env:
-          ITERATIONS: 40
-          SLEEP_SECONDS: 30
-        run: ./scripts/release/wait_for_image.sh ${{ env.IMAGE_REPO }}:${{ github.event.inputs.name }} $ITERATIONS $SLEEP_SECONDS
 #      - name: Create release assets
 #        id: create-assets
 #        env:
@@ -83,6 +77,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Wait for the Docker image
+        timeout-minutes: 20
+        env:
+          ITERATIONS: 40
+          SLEEP_SECONDS: 30
+        run: ./scripts/release/wait_for_image.sh ${{ env.IMAGE_REPO }}:${{ github.event.inputs.name }} $ITERATIONS $SLEEP_SECONDS
       - name: Publish release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
