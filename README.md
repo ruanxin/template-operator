@@ -32,6 +32,9 @@ Additionally, it hides Kubernetes boilerplate code to develop fast and efficient
     - [Deploying ModuleTemplate into the Control Plane](#deploying-moduletemplate-into-the-control-plane)
     - [Debugging the Operator Ecosystem](#debugging-the-operator-ecosystem)
     - [Registering your Module Within the Control Plane](#registering-your-module-within-the-control-plane)
+  - [Contributing](#contributing)
+  - [Code of Conduct](#code-of-conduct)
+  - [Licensing](#licensing)
 
 ## Understanding Module Development in Kyma 
 
@@ -483,3 +486,15 @@ Lastly, if you are still unsure, [open an issue](https://github.com/kyma-project
 
 For global usage of your module, the generated `template.yaml` from [Build and Push your Module to the Registry](#build-and-push-your-module-to-the-registry) must be registered in our Control Plane.
 This relates to [Phase 2 of the module transition plane](https://github.com/kyma-project/community/blob/main/concepts/modularization/transition.md#phase-2---first-module-managed-by-kyma-operator-integrated-with-keb). Please be patient until we provide you with a stable guide on integrating your `template.yaml` properly with an automated test flow into the central Control Plane offering.
+
+## Contributing
+
+See the [Contributing Rules](CONTRIBUTING.md).
+
+## Code of Conduct
+
+See the [Code of Conduct](CODE_OF_CONDUCT.md) document.
+
+## Licensing
+
+See the [license](./LICENSE) file.
