@@ -4,9 +4,13 @@ on:
   push:
     branches:
       - main  # This will get tagged with `latest` and `v{{DATE}}-{{COMMIT_HASH_SHORT}}`
-    tags:
-      - '[0-9]+.[0-9]+.[0-9]+'
-      - '[0-9]+.[0-9]+.[0-9]+-*'
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Additional tag for built images'
+        required: false
+        type: string
+        default: ""
   pull_request_target:
     types: [ opened, edited, synchronize, reopened, ready_for_review ]
 
@@ -25,8 +29,8 @@ jobs:
       - name: Get the latest tag
         id: get_tag
         run: |
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_type }}" == "tag" ]]; then
-            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          if [[ "${{ inputs.tag }}" != "" ]]; then
+            echo "tag=${{ inputs.tag }}" >> $GITHUB_OUTPUT
           elif [[ "${{ github.event_name }}" == "push" ]]; then
             echo "tag=latest" >> $GITHUB_OUTPUT
           fi
