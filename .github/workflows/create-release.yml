@@ -2,6 +2,7 @@ name: "Create release"
 
 env:
   IMAGE_REPO: europe-docker.pkg.dev/kyma-project/prod/template-operator
+  CODE_REPOSITORY: kyma-project/template-operator
 on:
   workflow_dispatch:
     inputs:
