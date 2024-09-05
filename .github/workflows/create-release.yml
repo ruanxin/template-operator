@@ -15,24 +15,21 @@ on:
         required: false
 
 jobs:
-  validate-head-status:
-    name: Validate HEAD
+  validate-release:
+    name: Validate release
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-        working-directory: ./scripts/release/
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Validate the release tag
-        run: ./validate_release_tag.sh ${{ github.event.inputs.name }}
-
+        run: ./scripts/release/validate_release_tag.sh ${{ github.event.inputs.name }}
+      - name: Check if release doesn't exist yet
+        run: ./scripts/release/get_release_by_tag.sh ${{ github.event.inputs.name }} ${{ secrets.GITHUB_TOKEN }}
   draft-release:
     name: Draft release
-    needs: validate-head-status
+    needs: validate-release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -69,7 +66,7 @@ jobs:
       tag: "${{ github.event.inputs.name }}"
   publish-release:
     name: Publish release
-    needs: [validate-head-status, draft-release, builds]
+    needs: [validate-release, draft-release, builds]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
