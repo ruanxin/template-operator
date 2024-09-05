@@ -50,16 +50,10 @@ jobs:
         run: |
           RELEASE_ID=$(./scripts/release/draft_release.sh ${{ github.event.inputs.name }})
           echo "release_id=$RELEASE_ID" >> $GITHUB_OUTPUT
-      - name: Create lightweight tag
+      - name: Create tag
         run: |
           git tag ${{ github.event.inputs.name }}
           git push origin ${{ github.event.inputs.name }} --tags
-      - name: Wait for the Docker image
-        timeout-minutes: 20
-        env:
-          ITERATIONS: 40
-          SLEEP_SECONDS: 30
-        run: ./scripts/release/wait_for_image.sh ${{ env.IMAGE_REPO }}:${{ github.event.inputs.name }} $ITERATIONS $SLEEP_SECONDS
       - name: Create release assets
         id: create-assets
         env:
@@ -68,7 +62,11 @@ jobs:
         run: ./scripts/release/upload_assets.sh
     outputs:
       release_id: ${{ steps.draft-release.outputs.release_id }}
-
+  builds:
+    needs: draft-release
+    uses: ./.github/workflows/build-image.yml
+    with:
+      tag: "${{ github.event.inputs.name }}"
   publish-release:
     name: Publish release
     needs: [validate-head-status, draft-release]
@@ -78,6 +76,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Wait for the Docker image
+        timeout-minutes: 20
+        env:
+          ITERATIONS: 40
+          SLEEP_SECONDS: 30
+        run: ./scripts/release/wait_for_image.sh ${{ env.IMAGE_REPO }}:${{ github.event.inputs.name }} $ITERATIONS $SLEEP_SECONDS
       - name: Publish release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
