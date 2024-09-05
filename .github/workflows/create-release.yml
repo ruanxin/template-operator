@@ -25,9 +25,9 @@ jobs:
         with:
           fetch-depth: 0
       - name: Validate the release tag
-        run: ./scripts/release/validate_release_tag.sh ${{ github.event.inputs.name }}
+        run: ./.github/scripts/release/validate_release_tag.sh ${{ github.event.inputs.name }}
       - name: Check if release doesn't exist yet
-        run: ./scripts/release/get_release_by_tag.sh ${{ github.event.inputs.name }} ${{ secrets.GITHUB_TOKEN }}
+        run: ./.github/scripts/release/get_release_by_tag.sh ${{ github.event.inputs.name }} ${{ secrets.GITHUB_TOKEN }}
   draft-release:
     name: Draft release
     needs: validate-release
@@ -40,13 +40,13 @@ jobs:
       - name: Create changelog
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./scripts/release/create_changelog.sh ${{ github.event.inputs.name }} ${{ github.event.inputs.since }}
+        run: ./.github/scripts/release/create_changelog.sh ${{ github.event.inputs.name }} ${{ github.event.inputs.since }}
       - name: Draft release
         id: draft-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          RELEASE_ID=$(./scripts/release/draft_release.sh ${{ github.event.inputs.name }})
+          RELEASE_ID=$(./.github/scripts/release/draft_release.sh ${{ github.event.inputs.name }})
           echo "release_id=$RELEASE_ID" >> $GITHUB_OUTPUT
       - name: Create tag
         run: |
@@ -57,7 +57,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PULL_BASE_REF: ${{ github.event.inputs.name }}
-        run: ./scripts/release/upload_assets.sh
+        run: ./.github/scripts/release/upload_assets.sh
     outputs:
       release_id: ${{ steps.draft-release.outputs.release_id }}
   builds:
@@ -79,8 +79,8 @@ jobs:
         env:
           ITERATIONS: 40
           SLEEP_SECONDS: 30
-        run: ./scripts/release/wait_for_image.sh ${{ env.IMAGE_REPO }}:${{ github.event.inputs.name }} $ITERATIONS $SLEEP_SECONDS
+        run: ./.github/scripts/release/wait_for_image.sh ${{ env.IMAGE_REPO }}:${{ github.event.inputs.name }} $ITERATIONS $SLEEP_SECONDS
       - name: Publish release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./scripts/release/publish_release.sh ${{ needs.draft-release.outputs.release_id }}
+        run: ./.github/scripts/release/publish_release.sh ${{ needs.draft-release.outputs.release_id }}
