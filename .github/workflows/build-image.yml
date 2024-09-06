@@ -22,7 +22,7 @@ jobs:
   compute-tag:
     runs-on: ubuntu-latest
     outputs:
-      tag: ${{ steps.get_tag.outputs.TAG }}
+      tag: ${{ steps.get_tag.outputs.tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,7 +35,7 @@ jobs:
             echo "tag=latest" >> $GITHUB_OUTPUT
           fi
       - name: Echo the tag
-        run: echo ${{ steps.get_tag.outputs.TAG }}
+        run: echo ${{ steps.get_tag.outputs.tag }}
   build-image:
     needs: compute-tag
     uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main
