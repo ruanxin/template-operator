@@ -1,6 +1,6 @@
 module github.com/kyma-project/template-operator
 
-go 1.22.4
+go 1.23.2
 
 replace github.com/kyma-project/template-operator/api => ./api
 
