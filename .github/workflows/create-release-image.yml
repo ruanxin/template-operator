@@ -1,4 +1,4 @@
-name: "Create release"
+name: "Create Release For Module Image"
 
 permissions:
   id-token: write
